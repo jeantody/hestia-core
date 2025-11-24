@@ -190,8 +190,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return `<div class="app-content app-type-text"><h4>${app.name}</h4><p>${data.content || ''}</p></div>`;
         }
         if (subtype === 'image') {
-            return `<img src="${data.url}" alt="${app.name}" class="app-content app-type-image" draggable="false">`;
-        }
+        return `<img src="${data.url}" alt="${app.name}" class="app-image-absolute" draggable="false">`;
+    }
         return `<div class="app-content">Unknown Type</div>`;
     }
 
