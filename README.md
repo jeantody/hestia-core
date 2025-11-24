@@ -6,7 +6,7 @@ Welcome to Hestia-Core! This project is a highly customizable dashboard that run
 
 ## Key Features
 
-HestiaHUD is built around three core features that you can personalize entirely.
+Hestia-Core is built around three core features that you can personalize entirely.
 
 ### 1. Dashboard Layout and Grid Management
 

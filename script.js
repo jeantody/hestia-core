@@ -626,9 +626,18 @@ document.addEventListener('DOMContentLoaded', () => {
             if(input) window.createApp(input.value.trim() || "Static App");
         });
     };
+
     window.createApp = (name) => {
         const cols = parseInt(currentConfig.theme.gridColumns) || 10;
         const rows = parseInt(currentConfig.theme.gridRows) || 6;
+
+        cachedApps = Array.from(document.querySelectorAll('.app-card')).map(app => ({
+            el: app,
+            x: parseInt(app.dataset.x, 10)||0,
+            y: parseInt(app.dataset.y, 10)||0,
+            cols: parseInt(app.dataset.cols, 10)||1,
+            rows: parseInt(app.dataset.rows, 10)||1
+        }));
 
         let x = 1, y = 1, found = false;
 
@@ -641,6 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if(found) break;
         }
+
         if (!found) { window.showToast("Dashboard full!", "error"); return; }
 
         const div = document.createElement('div');
