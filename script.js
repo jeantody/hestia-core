@@ -287,6 +287,165 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Helper to update the card in the DOM and save the layout
+    function updateAppCard(card, config) {
+        const w = parseInt(card.dataset.cols);
+        const h = parseInt(card.dataset.rows);
+
+        // Update data attributes
+        card.dataset.name = config.name;
+        card.dataset.subtype = config.subtype;
+        card.dataset.appData = JSON.stringify(config.data);
+
+        // Construct full object for renderer (needed by getAppContentHTML)
+        const fullAppObj = {
+            id: parseInt(card.dataset.id),
+            name: config.name,
+            subtype: config.subtype,
+            data: config.data,
+            x: parseInt(card.dataset.x),
+            y: parseInt(card.dataset.y),
+            cols: w, rows: h,
+        };
+
+        const innerHTML = getAppContentHTML(fullAppObj);
+
+        // Rebuild inner HTML (must include the buttons we just added)
+        card.innerHTML = `
+            ${innerHTML}
+            <div class="resize-handle"></div>
+            <div class="card-meta">${w}x${h}</div>
+            <div class="edit-btn" onclick="editApp(this)" title="Edit App"><i class="fa-solid fa-pencil"></i></div>
+            <div class="delete-btn" onclick="confirmDelete(event, this)" title="Delete App"><i class="fa-solid fa-trash"></i></div>
+        `;
+
+        saveApps();
+        showToast(`${config.name} updated!`, "success");
+    }
+
+    // Main function to open the modal for editing an existing app
+    window.editApp = (btn) => {
+        if (!isEditMode) return;
+        const card = btn.closest('.app-card');
+
+        // 1. Pull existing app data from the card's dataset
+        const appData = {
+            name: card.dataset.name,
+            subtype: card.dataset.subtype,
+            data: JSON.parse(card.dataset.appData || '{}')
+        };
+
+        // 2. Use the same HTML structure as promptNewApp
+        const html = `
+            <div class="form-group" style="display:flex; flex-direction:column; gap:10px;">
+                <input type="text" id="appName" class="modal-input" placeholder="App Name (e.g. Google)">
+                <select id="appSubtype" class="modal-input" onchange="toggleFormFields(this.value)">
+                    <option value="link">Link Button</option>
+                    <option value="text">Text Note</option>
+                    <option value="image">Image Frame</option>
+                </select>
+
+                <div id="field-img-source" class="dynamic-field" style="display:none; gap:15px; margin-bottom:5px;">
+                    <label style="cursor:pointer; display:flex; align-items:center; gap:5px;">
+                        <input type="radio" name="imgSource" value="url" checked onchange="toggleImageSource('url')"> Web Link
+                    </label>
+                    <label style="cursor:pointer; display:flex; align-items:center; gap:5px;">
+                        <input type="radio" name="imgSource" value="upload" onchange="toggleImageSource('upload')"> Local Upload
+                    </div>
+                </div>
+
+                <div id="field-url" class="dynamic-field">
+                    <input type="text" id="appUrl" class="modal-input" placeholder="URL (https://...)">
+                </div>
+
+                <div id="field-file" class="dynamic-field" style="display:none;">
+                    <input type="file" id="appFileInput" class="modal-input" accept="image/*">
+                    <div style="font-size:0.7rem; color:var(--text-muted); margin-top:5px;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Uploading new image replaces existing one.
+                    </div>
+                </div>
+
+                <div id="field-icon" class="dynamic-field">
+                    <input type="text" id="appIcon" class="modal-input" placeholder="Icon (e.g. fa-google)">
+                </div>
+                <div id="field-content" class="dynamic-field" style="display:none;">
+                    <textarea id="appContent" class="modal-input" rows="3" placeholder="Type your note here..."></textarea>
+                </div>
+            </div>
+        `;
+
+        // 3. Open Modal for Editing
+        showModal(`Edit: ${appData.name}`, html, `<i class="fa-solid fa-save"></i>`, async () => {
+
+            // --- SAVE LOGIC (Identical to promptNewApp, but operates on existing card) ---
+            const newName = document.getElementById('appName').value.trim() || appData.name;
+            const newSubtype = document.getElementById('appSubtype').value;
+            const newAppData = { type: 'static', subtype: newSubtype, name: newName, data: {} };
+
+            // Data capture logic
+            if(newSubtype === 'link') {
+                newAppData.data.url = document.getElementById('appUrl').value;
+                newAppData.data.icon = document.getElementById('appIcon').value || 'fa-link';
+            } else if (newSubtype === 'text') {
+                newAppData.data.content = document.getElementById('appContent').value;
+            } else if (newSubtype === 'image') {
+                const isUpload = document.querySelector('input[name="imgSource"][value="upload"]').checked;
+
+                if (isUpload) {
+                    const fileInput = document.getElementById('appFileInput');
+                    if (fileInput.files && fileInput.files[0]) {
+                        // Process new file upload
+                        try {
+                            newAppData.data.url = await convertFileToBase64(fileInput.files[0]);
+                        } catch (e) {
+                            window.showToast("Error processing image", "error"); return;
+                        }
+                    } else {
+                        // No new file uploaded: preserve the old data URL if it exists
+                        newAppData.data.url = appData.data.url;
+                    }
+                } else {
+                    // Use the standard URL
+                    newAppData.data.url = document.getElementById('appUrl').value;
+                }
+            }
+
+            // 4. Update the card and save
+            updateAppCard(card, newAppData);
+
+        });
+
+        // 5. Pre-populate Fields (After modal is rendered)
+        document.getElementById('appName').value = appData.name;
+        document.getElementById('appSubtype').value = appData.subtype;
+
+        // Trigger the toggle function to show the correct fields for the app's type
+        toggleFormFields(appData.subtype);
+
+        // Pre-populate specific fields based on current data
+        if (appData.subtype === 'link') {
+            document.getElementById('appUrl').value = appData.data.url || '';
+            document.getElementById('appIcon').value = appData.data.icon || '';
+        } else if (appData.subtype === 'text') {
+            document.getElementById('appContent').value = appData.data.content || '';
+        } else if (appData.subtype === 'image') {
+            const isBase64 = appData.data.url && appData.data.url.startsWith('data:image/');
+
+            if (isBase64) {
+                // If Base64, select 'Local Upload' radio and show the file input
+                document.querySelector('input[name="imgSource"][value="upload"]').checked = true;
+                document.getElementById('appUrl').value = 'Image is currently an upload (Base64). Upload new file to change.';
+                document.getElementById('appUrl').disabled = true; // Prevent editing the Base64 data string
+                toggleImageSource('upload');
+            } else {
+                // If URL, select 'Web Link' radio and fill URL
+                document.getElementById('appUrl').value = appData.data.url || '';
+                toggleImageSource('url');
+            }
+        }
+    };
+
+
     // =========================================================================
     // 3. APP LIFECYCLE & INITIALIZATION
     // =========================================================================
@@ -317,6 +476,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 ${innerHTML}
                 <div class="resize-handle"></div>
                 <div class="card-meta">${app.cols}x${app.rows}</div>
+
+                <div class="edit-btn" onclick="editApp(this)" title="Edit App">
+                    <i class="fa-solid fa-pencil"></i>
+                </div>
+
                 <div class="delete-btn" onclick="confirmDelete(event, this)" title="Delete App">
                     <i class="fa-solid fa-trash"></i>
                 </div>
@@ -917,6 +1081,11 @@ document.addEventListener('DOMContentLoaded', () => {
             ${innerHTML}
             <div class="resize-handle"></div>
             <div class="card-meta">${w}x${h}</div>
+
+            <div class="edit-btn" onclick="editApp(this)" title="Edit App">
+                <i class="fa-solid fa-pencil"></i>
+            </div>
+
             <div class="delete-btn" onclick="confirmDelete(event, this)" title="Delete App">
                 <i class="fa-solid fa-trash"></i>
             </div>

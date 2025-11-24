@@ -131,6 +131,57 @@ body {
 
 }
 
+.edit-btn {
+    position: absolute;
+    top: 46px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    background: var(--brand-secondary); /* Use a secondary color for editing */
+    color: white;
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 5000;
+}
+.dashboard-container.edit-mode .app-card:hover .edit-btn {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+
+.delete-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    background: var(--status-error);
+    color: white;
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 5001;
+}
+.dashboard-container.edit-mode .app-card:hover .delete-btn {
+    opacity: 1;
+    pointer-events: auto;
+}
+
 /* -------------------------------------------------------------------------- */
 /* 4. MISC (Animations, etc.)                                                 */
 /* -------------------------------------------------------------------------- */
