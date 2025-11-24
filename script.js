@@ -171,9 +171,37 @@ document.addEventListener('DOMContentLoaded', () => {
         const iconField = document.getElementById('field-icon');
         const contentField = document.getElementById('field-content');
 
-        if(urlField) urlField.style.display = (type === 'text') ? 'none' : 'block';
-        if(iconField) iconField.style.display = (type === 'link') ? 'block' : 'none';
-        if(contentField) contentField.style.display = (type === 'text') ? 'block' : 'none';
+        // New fields
+        const imgSourceField = document.getElementById('field-img-source');
+        const fileField = document.getElementById('field-file');
+
+        // Reset basics
+        if(urlField) urlField.style.display = 'none';
+        if(iconField) iconField.style.display = 'none';
+        if(contentField) contentField.style.display = 'none';
+        if(imgSourceField) imgSourceField.style.display = 'none';
+        if(fileField) fileField.style.display = 'none';
+
+        // Logic per type
+        if (type === 'link') {
+            if(urlField) urlField.style.display = 'block';
+            if(iconField) iconField.style.display = 'block';
+        }
+        else if (type === 'text') {
+            if(contentField) contentField.style.display = 'block';
+        }
+        else if (type === 'image') {
+            // For images, we show the Source Toggle
+            if(imgSourceField) imgSourceField.style.display = 'flex';
+
+            // Check which radio is active to decide whether to show URL or File
+            const uploadRadio = document.querySelector('input[name="imgSource"][value="upload"]');
+            if (uploadRadio && uploadRadio.checked) {
+                if(fileField) fileField.style.display = 'block';
+            } else {
+                if(urlField) urlField.style.display = 'block';
+            }
+        }
     };
 
     // HELPER: Generate HTML based on App Type
@@ -193,6 +221,70 @@ document.addEventListener('DOMContentLoaded', () => {
         return `<img src="${data.url}" alt="${app.name}" class="app-image-absolute" draggable="false">`;
     }
         return `<div class="app-content">Unknown Type</div>`;
+    }
+
+    // HELPER: Toggle between URL input and File Upload input
+    window.toggleImageSource = (source) => {
+        const urlDiv = document.getElementById('field-url');
+        const fileDiv = document.getElementById('field-file');
+
+        if (source === 'url') {
+            urlDiv.style.display = 'block';
+            fileDiv.style.display = 'none';
+        } else {
+            urlDiv.style.display = 'none';
+            fileDiv.style.display = 'block';
+        }
+    };
+
+    // HELPER: Convert file to Base64 string (Promise-based)
+    function convertFileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+
+                img.onload = () => {
+                    // 1. Create a canvas
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    // 2. Calculate new size (Max 800px width/height)
+                    const maxSize = 800;
+                    if (width > height) {
+                        if (width > maxSize) {
+                            height *= maxSize / width;
+                            width = maxSize;
+                        }
+                    } else {
+                        if (height > maxSize) {
+                            width *= maxSize / height;
+                            height = maxSize;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    // 3. Draw image on canvas
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // 4. Compress to JPEG at 70% quality
+                    // This drastically reduces size (e.g., 3MB -> 50KB)
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    resolve(compressedDataUrl);
+                };
+
+                img.onerror = (err) => reject(err);
+            };
+
+            reader.onerror = (error) => reject(error);
+        });
     }
 
     // =========================================================================
@@ -675,39 +767,93 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- APP CRUD LOGIC ---
     window.promptNewApp = () => {
-        if(!isEditMode) return;
+    if(!isEditMode) return;
 
-        const html = `
-            <div class="form-group" style="display:flex; flex-direction:column; gap:10px;">
-                <input type="text" id="appName" class="modal-input" placeholder="App Name (e.g. Google)">
-                <select id="appSubtype" class="modal-input" onchange="toggleFormFields(this.value)">
-                    <option value="link">Link Button</option>
-                    <option value="text">Text Note</option>
-                    <option value="image">Image Frame</option>
-                </select>
-                <div id="field-url" class="dynamic-field"><input type="text" id="appUrl" class="modal-input" placeholder="URL (https://...)"></div>
-                <div id="field-icon" class="dynamic-field"><input type="text" id="appIcon" class="modal-input" placeholder="Icon (e.g. fa-google)"></div>
-                <div id="field-content" class="dynamic-field" style="display:none;"><textarea id="appContent" class="modal-input" rows="3" placeholder="Type your note here..."></textarea></div>
+    const html = `
+        <div class="form-group" style="display:flex; flex-direction:column; gap:10px;">
+            <input type="text" id="appName" class="modal-input" placeholder="App Name (e.g. My Photo)">
+
+            <select id="appSubtype" class="modal-input" onchange="toggleFormFields(this.value)">
+                <option value="link">Link Button</option>
+                <option value="text">Text Note</option>
+                <option value="image">Image Frame</option>
+            </select>
+
+            <div id="field-img-source" class="dynamic-field" style="display:none; gap:15px; margin-bottom:5px;">
+                <label style="cursor:pointer; display:flex; align-items:center; gap:5px;">
+                    <input type="radio" name="imgSource" value="url" checked onchange="toggleImageSource('url')"> Web Link
+                </label>
+                <label style="cursor:pointer; display:flex; align-items:center; gap:5px;">
+                    <input type="radio" name="imgSource" value="upload" onchange="toggleImageSource('upload')"> Local Upload
+                </label>
             </div>
-        `;
 
-        showModal("Add Static App", html, `<i class="fa-solid fa-plus"></i>`, () => {
-            const name = document.getElementById('appName').value.trim() || "Untitled";
-            const subtype = document.getElementById('appSubtype').value;
+            <div id="field-url" class="dynamic-field">
+                <input type="text" id="appUrl" class="modal-input" placeholder="URL (https://...)">
+            </div>
 
-            const newAppData = { type: 'static', subtype: subtype, name: name, data: {} };
+            <div id="field-file" class="dynamic-field" style="display:none;">
+                <input type="file" id="appFileInput" class="modal-input" accept="image/*">
+                <div style="font-size:0.7rem; color:var(--text-muted); margin-top:5px;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Max ~2MB recommended (LocalStorage limit).
+                </div>
+            </div>
 
-            if(subtype === 'link') {
+            <div id="field-icon" class="dynamic-field">
+                <input type="text" id="appIcon" class="modal-input" placeholder="Icon (e.g. fa-google)">
+            </div>
+            <div id="field-content" class="dynamic-field" style="display:none;">
+                <textarea id="appContent" class="modal-input" rows="3" placeholder="Type your note here..."></textarea>
+            </div>
+        </div>
+    `;
+
+    showModal("Add App", html, `<i class="fa-solid fa-plus"></i>`, async () => {
+        const name = document.getElementById('appName').value.trim() || "Untitled";
+        const subtype = document.getElementById('appSubtype').value;
+
+        const newAppData = {
+            type: 'static',
+            subtype: subtype,
+            name: name,
+            data: {}
+        };
+
+        if(subtype === 'link') {
+            newAppData.data.url = document.getElementById('appUrl').value;
+            newAppData.data.icon = document.getElementById('appIcon').value || 'fa-link';
+        }
+        else if (subtype === 'text') {
+            newAppData.data.content = document.getElementById('appContent').value;
+        }
+        else if (subtype === 'image') {
+            // Check if we are using URL or Upload
+            const isUpload = document.querySelector('input[name="imgSource"][value="upload"]').checked;
+
+            if (isUpload) {
+                const fileInput = document.getElementById('appFileInput');
+                if (fileInput.files && fileInput.files[0]) {
+                    try {
+                        // Convert file to Base64 String
+                        const base64String = await convertFileToBase64(fileInput.files[0]);
+                        newAppData.data.url = base64String;
+                    } catch (e) {
+                        window.showToast("Error processing image", "error");
+                        return;
+                    }
+                } else {
+                    // Fallback placeholder if no file selected
+                    newAppData.data.url = "";
+                }
+            } else {
+                // Use the standard URL
                 newAppData.data.url = document.getElementById('appUrl').value;
-                newAppData.data.icon = document.getElementById('appIcon').value || 'fa-link';
-            } else if (subtype === 'image') {
-                newAppData.data.url = document.getElementById('appUrl').value;
-            } else if (subtype === 'text') {
-                newAppData.data.content = document.getElementById('appContent').value;
             }
-            window.createApp(newAppData);
-        });
-    };
+        }
+
+        window.createApp(newAppData);
+    });
+};
 
     window.createApp = (appConfig) => {
         // FIX: Ensure we are using the passed object, not 'name'
