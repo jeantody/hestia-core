@@ -194,22 +194,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     function init() {
-        // 1. Draw Grid Lines (Always draw the grid lines container)
-        gridLines.innerHTML = '';
-        for(let i=0; i<60; i++) {
-            const div = document.createElement('div');
-            div.className = 'grid-cell';
-            gridLines.appendChild(div);
+        // 1. Draw Grid Lines (Only for initial render if no local save)
+        if (currentConfig.apps.length === 0) {
+            gridLines.innerHTML = '';
+            for(let i=0; i<60; i++) {
+                const div = document.createElement('div');
+                div.className = 'grid-cell';
+                gridLines.appendChild(div);
+            }
+        } else {
+            // If apps exist in localStorage, rebuild the entire DOM
+            rebuildDashboardFromConfig(currentConfig.apps);
         }
+
 
         // 2. Setup Preset Selector Options
         renderPresetOptions();
 
-        // 3. Apply Saved Config and Draw Dashboard
+        // 3. Apply Saved Config
         applyTheme(currentConfig.theme);
-        // Always call rebuildDashboardFromConfig to draw the apps,
-        // whether from localStorage or the HESTIA_APPS_DEFAULT fallback.
-        rebuildDashboardFromConfig(currentConfig.apps);
 
         // 4. Configure Palette Defaults for Reset Buttons
         if (currentConfig.theme.activePalette && availablePalettes[currentConfig.theme.activePalette]) {
@@ -488,7 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const panelRect = settingsPanel.getBoundingClientRect();
 
         // Position the popover near the color swatch, adjusted for center modal
-        palettePopover.style.top = (rect.bottom - panelRect.top - 20) + 'px';
+        palettePopover.style.top = (rect.bottom - panelRect.top + 5) + 'px';
         palettePopover.style.left = (rect.left - panelRect.left + 490) + 'px';
 
         let colors = [];
@@ -513,6 +516,28 @@ document.addEventListener('DOMContentLoaded', () => {
         palettePopover.innerHTML = html;
         palettePopover.classList.add('active');
     };
+
+    window.selectPopoverColor = (color) => {
+        if(activePopoverKey) {
+            const input = document.getElementById(`input-${activePopoverKey}`);
+            input.value = color;
+            window.updateSetting(activePopoverKey, color);
+        }
+        closePopover();
+    };
+
+    window.openNativePicker = () => {
+        if(activePopoverKey) document.getElementById(`input-${activePopoverKey}`).click();
+        closePopover();
+    };
+
+    function closePopover() {
+        if(palettePopover) {
+            palettePopover.classList.remove('active');
+            activePopoverKey = null;
+        }
+    }
+
 
     // =========================================================================
     // 6. DASHBOARD & EDIT MODE LOGIC (UPDATED FOR LOCAL STORAGE)
