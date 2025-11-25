@@ -31,9 +31,9 @@ export const DEFAULT_THEME = {
     textFaint: "#585858",
     textInverse: "#181818",
 
-    brandPrimary: "#a1b56c",
-    brandSecondary: "#7cafc2",
-    brandTertiary: "#ba8baf",
+    brandPrimary: "#ab4642",
+    brandSecondary: "#dc9656",
+    brandTertiary: "#f7ca88",
 
     statusError: "#ab4642",
     statusWarning: "#dc9656",
@@ -42,51 +42,130 @@ export const DEFAULT_THEME = {
 
 export const DEFAULT_APPS = [
     {
-        "id": 1763998798882,
-        "name": "Untitled",
-        "subtype": "image",
-        "type": "static",
-        "x": 7, "y": 3, "cols": 1, "rows": 2,
-        "data": {
-            "url": "assets/cat.jpg",
-        }
+      "id": 1764067661194,
+      "name": "Note app",
+      "subtype": "note",
+      "type": "static",
+      "x": 5,
+      "y": 2,
+      "cols": 2,
+      "rows": 2,
+      "data": {
+        "bgColor": "var(--bg-surface)",
+        "textColor": "var(--text-main)",
+        "title": "Welcome to 🔥 Hestia!",
+        "text": "*To start:*\n[ :fa-solid fa-pen-to-square: ] Enter Edit Mode\n[ :fa-solid fa-floppy-disk: ] Save changes and exit\n\n*While in Edit mode:*\n[ :fa-solid fa-plus: ] Add app.\n[ :fa-solid fa-eraser: ] clear all apps.\n[ :fa-solid fa-gear: ] change dashboard settings.\n\n[ :fa-solid fa-arrow-pointer: ] Double-click note to edit"
+      }
     },
     {
-        "id": 1763998868976,
-        "name": "Welcome to <i class=\"fa-solid fa-fire\"></i> Hestia!",
-        "subtype": "text",
-        "type": "static",
-        "x": 5, "y": 3, "cols": 2, "rows": 2,
-        "data": {
-            "content": "Start by exploring the buttons.\n\nClick <i class=\"fa-solid fa-pen-to-square\"></i> to enter Edit Mode. \nClick <i class=\"fa-solid fa-floppy-disk\"></i> to exit Edit Mode and save.\n\nClick <i class=\"fa-solid fa-plus\"></i> to add apps.\n\nClick <i class=\"fa-solid fa-broom\"></i> to clear the dashboard\n\nClick <i class=\"fa-solid fa-gear\"></i> to change dashboard settings.",
-            "bgColor": "#f9dab0",
-            "textColor": "#181818"
-        }
+      "id": 1764068167057,
+      "name": "Image",
+      "subtype": "image",
+      "type": "static",
+      "x": 7,
+      "y": 2,
+      "cols": 2,
+      "rows": 3,
+      "data": {
+        "src": "assets/img.jpg",
+        "bgColor": "var(--bg-surface)",
+        "textColor": "var(--text-main)",
+        "fit": "cover"
+      }
     },
     {
-        "id": 1763998884008,
-        "name": "Youtube",
-        "subtype": "link",
-        "type": "static",
-        "x": 4, "y": 3, "cols": 1, "rows": 1,
-        "data": {
-            "url": "https://youtube.com",
-            "icon": "fa-brands fa-youtube",
-            "bgColor": "#ab4642",
-            "textColor": "#f8f8f8"
-        }
+      "id": 1764071158714,
+      "name": "Untitled",
+      "subtype": "clock",
+      "type": "static",
+      "x": 3,
+      "y": 2,
+      "cols": 2,
+      "rows": 1,
+      "data": {
+        "format": "24",
+        "bgColor": "#282828",
+        "textColor": "#e8e8e8"
+      }
     },
     {
-        "id": 1763998911851,
-        "name": "Github",
-        "subtype": "link",
-        "type": "static",
-        "x": 4, "y": 4, "cols": 1, "rows": 1,
-        "data": {
-            "url": "http://github.com/mult1v4c/hestia-core",
-            "icon": "fa-brands fa-github",
-            "bgColor": "#181818",
-            "textColor": "var(--text-main)"
-        }
+      "id": 1764071405510,
+      "name": "Untitled",
+      "subtype": "calendar",
+      "type": "static",
+      "x": 3,
+      "y": 3,
+      "cols": 2,
+      "rows": 2,
+      "data": {
+        "bgColor": "var(--bg-surface)",
+        "textColor": "var(--text-main)"
+      }
+    },
+    {
+      "id": 1764071478849,
+      "name": "Paris",
+      "subtype": "weather",
+      "type": "static",
+      "x": 3,
+      "y": 5,
+      "cols": 2,
+      "rows": 1,
+      "data": {
+        "lat": "",
+        "lon": "",
+        "bgColor": "#282828",
+        "textColor": "#e8e8e8"
+      }
+    },
+    {
+      "id": 1764083611404,
+      "name": "Github",
+      "subtype": "link",
+      "type": "static",
+      "x": 7,
+      "y": 5,
+      "cols": 1,
+      "rows": 1,
+      "data": {
+        "url": "https://github.com/mult1v4c/hestia-core",
+        "icon": "github",
+        "bgColor": "#e8e8e8",
+        "textColor": "#282828",
+        "hideLabel": "false"
+      }
+    },
+    {
+      "id": 1764085472564,
+      "name": "Untitled",
+      "subtype": "note",
+      "type": "static",
+      "x": 5,
+      "y": 4,
+      "cols": 2,
+      "rows": 2,
+      "data": {
+        "title": "",
+        "bgColor": "var(--bg-surface)",
+        "textColor": "var(--text-main)",
+        "text": "# Basic Markdown\n---\n## Heading 2\n### Heading 3\nNormal Text / *Italic* / **Bold**\n`$ code` / [Links](http://127.0.0.1)\n- [ ] Item\n- [x] Item\n- List\n- List"
+      }
+    },
+    {
+      "id": 1764090614585,
+      "name": "Youtube",
+      "subtype": "link",
+      "type": "static",
+      "x": 8,
+      "y": 5,
+      "cols": 1,
+      "rows": 1,
+      "data": {
+        "url": "https://www.youtube.com/watch?v=Y6ljFaKRTrI",
+        "icon": "youtube",
+        "hideLabel": "true",
+        "bgColor": "#ab4642",
+        "textColor": "#f8f8f8"
+      }
     }
-];
+  ]
