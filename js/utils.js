@@ -132,3 +132,31 @@ export function safeJSONparse(str, fallback = null) {
     return fallback;
   }
 }
+
+// -----------------------------
+// FONTAWESOME HELPER
+// -----------------------------
+
+export function resolveIconClass(input) {
+    if (!input) return 'fa-solid fa-icons';
+
+    // If user already typed "fa-" (e.g. "fa-solid fa-home"), trust them
+    if (input.includes('fa-')) return input;
+
+    const lower = input.toLowerCase().trim();
+
+    // 1. Brands (Common social media & tech)
+    const brands = [
+        'youtube', 'github', 'facebook', 'twitter', 'x-twitter', 'instagram',
+        'discord', 'linkedin', 'twitch', 'steam', 'spotify', 'apple', 'android',
+        'windows', 'google', 'amazon', 'tiktok', 'reddit'
+    ];
+
+    if (brands.includes(lower)) {
+        return `fa-brands fa-${lower}`;
+    }
+
+    // 2. Solid (Common UI elements)
+    // Default to solid for everything else
+    return `fa-solid fa-${lower}`;
+}

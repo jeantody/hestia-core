@@ -1,16 +1,26 @@
-// js/ui/toast.js
-import { createEl, appendChildren, qs } from "../dom.js";
+// js/ui/toasts.js
+import { createEl, qs } from "../dom.js";
 
+/**
+ * Show a toast notification
+ * @param {string} message
+ * @param {'success'|'error'|'warning'} type
+ */
 export function showToast(message, type = 'success') {
     let container = qs('#toast-container');
 
-    // Create container if it doesn't exist (defensive coding)
     if (!container) {
         container = createEl('div', { attrs: { id: 'toast-container' }, class: 'toast-container' });
         document.body.appendChild(container);
     }
 
-    const iconClass = type === 'error' ? 'fa-circle-exclamation' : 'fa-circle-check';
+    const iconMap = {
+        error: 'fa-circle-exclamation',
+        success: 'fa-circle-check',
+        warning: 'fa-triangle-exclamation'
+    };
+
+    const iconClass = iconMap[type] || 'fa-info-circle';
 
     const toast = createEl('div', {
         class: `toast ${type}`,
