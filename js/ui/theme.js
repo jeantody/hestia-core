@@ -13,7 +13,20 @@ export function applyTheme(theme) {
     if (!theme) return;
     const root = document.documentElement;
 
-    // 1. Apply Semantic Colors
+    // 1. INJECT RAW BASE COLORS (Critical for var(--baseXX) references)
+    if (theme.activePalette && window.HESTIA_PALETTES) {
+        const palette = window.HESTIA_PALETTES[theme.activePalette];
+        if (palette) {
+            Object.keys(palette).forEach(key => {
+                // Inject --base00, --base01, etc.
+                if (key.startsWith('base')) {
+                    root.style.setProperty(`--${key}`, formatColor(palette[key]));
+                }
+            });
+        }
+    }
+
+    // 2. Apply Semantic Colors
     const colorProps = [
         'bgCanvas', 'bgSurface', 'bgHighlight',
         'borderDim', 'borderBright',
@@ -29,7 +42,7 @@ export function applyTheme(theme) {
         }
     });
 
-    // 2. Apply Geometry
+    // 3. Apply Geometry
     root.style.setProperty('--gap-size', toPx(theme.gapSize));
     root.style.setProperty('--radius', toPx(theme.borderRadius));
     root.style.setProperty('--grid-padding', toPx(theme.gridPadding));
@@ -37,7 +50,7 @@ export function applyTheme(theme) {
     root.style.setProperty('--grid-rows', theme.gridRows || 6);
     root.style.setProperty('--font-main-stack', theme.fontFamily || "Courier New");
 
-    // 3. Toggles
+    // 4. Toggles
     if (theme.shadow) document.body.classList.add('shadow-on');
     else document.body.classList.remove('shadow-on');
 
@@ -47,7 +60,7 @@ export function applyTheme(theme) {
         else dashboard.classList.remove('show-outlines');
     }
 
-    // 4. Header Info
+    // 5. Header Info
     const headerTitle = qs('#headerTitle');
     const iconClass = theme.titleBarIcon || "fa-fire";
     if(headerTitle) {
@@ -60,11 +73,10 @@ export function applyTheme(theme) {
 // ---------------------------
 
 export function applyBase16Theme(paletteName) {
-    // 1. Get palette from global/state
     const palette = window.HESTIA_PALETTES?.[paletteName];
     if (!palette) return;
 
-    // 2. Map Base16 to Semantic Keys
+    // Map Base16 to Semantic Keys
     const mapping = {
         'bgCanvas': 'base00', 'bgSurface': 'base01', 'bgHighlight': 'base02',
         'borderDim': 'base02', 'borderBright': 'base03',
@@ -77,7 +89,7 @@ export function applyBase16Theme(paletteName) {
 
     for (const [semanticKey, baseKey] of Object.entries(mapping)) {
         if (palette[baseKey]) {
-            newTheme[semanticKey] = formatColor(palette[baseKey]);
+            newTheme[semanticKey] = `var(--${baseKey})`;
         }
     }
 

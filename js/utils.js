@@ -15,18 +15,22 @@ export function generateId(prefix = "id") {
 // COLOR & CSS UTILITIES
 // -----------------------------
 
-// Ensure color is a valid CSS string
-export function formatColor(c) {
-  if (!c) return '#000000';
-  const str = String(c).trim();
+// Resolve a CSS variable (or any color string) to a specific HEX value
+export function resolveToHex(colorStr) {
+    if (!colorStr) return '#000000';
+    const str = String(colorStr).trim();
 
-  // If it's already a valid format (Hex, RGB, HSL, var), return as is
-  if (str.startsWith('#') || str.startsWith('rgb') || str.startsWith('hsl') || str.startsWith('var')) {
-      return str;
-  }
+    // If it is a CSS variable var(--name)
+    if (str.startsWith('var(')) {
+        const varName = str.match(/var\(([^)]+)\)/)?.[1];
+        if (varName) {
+            // Get the actual computed style from the DOM root
+            const resolved = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+            if (resolved) return toHex(resolved);
+        }
+    }
 
-  // Otherwise assume it's a raw hex needing a hash
-  return '#' + str;
+    return toHex(str);
 }
 
 // Helper to force HEX for <input type="color">
@@ -34,7 +38,13 @@ export function toHex(c) {
     if (!c) return '#000000';
     const str = String(c).trim();
 
-    if (str.startsWith('#')) return str;
+    if (str.startsWith('#')) {
+        // Handle short hex #fff -> #ffffff
+        if (str.length === 4) {
+            return `#${str[1]}${str[1]}${str[2]}${str[2]}${str[3]}${str[3]}`;
+        }
+        return str;
+    }
 
     // If it's rgb(r, g, b), convert to hex
     if (str.startsWith('rgb')) {
@@ -52,7 +62,17 @@ export function toHex(c) {
         return "#" + r + g + b;
     }
 
-    return '#' + str; // Fallback
+    return '#000000'; // Fallback
+}
+
+// Ensure color is a valid CSS string (for style attributes)
+export function formatColor(c) {
+  if (!c) return '#000000';
+  const str = String(c).trim();
+  if (str.startsWith('#') || str.startsWith('rgb') || str.startsWith('hsl') || str.startsWith('var')) {
+      return str;
+  }
+  return '#' + str;
 }
 
 // Ensure value has 'px' if it's a number

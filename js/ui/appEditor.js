@@ -5,7 +5,7 @@ import { showToast } from "./toasts.js";
 import { openColorPicker } from "./colorPicker.js";
 import { renderGrid } from "../grid.js";
 import { saveState } from "../storage.js";
-import { formatColor, toHex } from "../utils.js";
+import { formatColor, toHex, resolveToHex, escapeHtml } from "../utils.js";
 import { registry } from "../registry.js";
 import { saveImage } from "../imageStore.js"; // Import DB Saver
 
@@ -36,7 +36,7 @@ function generateEditorHtml(appType, currentData = {}) {
                 <div class="color-wrapper">
                     <div class="color-preview" id="preview-core-bgColor" style="background:${defaults.bgColor}"></div>
                     <input type="text" id="core-bgColor" class="modal-input modal-input-color" value="${defaults.bgColor}">
-                    <input type="color" id="native-core-bgColor" class="hidden-native" value="${toHex(defaults.bgColor)}">
+                    <input type="color" id="native-core-bgColor" class="hidden-native-picker" value="${toHex(defaults.bgColor)}">
                 </div>
             </div>
             <div style="flex:1;">
@@ -44,7 +44,7 @@ function generateEditorHtml(appType, currentData = {}) {
                 <div class="color-wrapper">
                     <div class="color-preview" id="preview-core-textColor" style="background:${defaults.textColor}"></div>
                     <input type="text" id="core-textColor" class="modal-input modal-input-color" value="${defaults.textColor}">
-                    <input type="color" id="native-core-textColor" class="hidden-native" value="${toHex(defaults.textColor)}">
+                    <input type="color" id="native-core-textColor" class="hidden-native-picker" value="${toHex(defaults.textColor)}">
                 </div>
             </div>
         </div>
@@ -55,15 +55,6 @@ function generateEditorHtml(appType, currentData = {}) {
             ${generateDynamicFields(appDef, currentData.data || {})}
         </div>
     </div>
-
-    <style>
-        .label-muted { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 4px; display:block; }
-        .color-wrapper { display: flex; align-items: center; gap: 8px; }
-        .color-preview { width: 30px; height: 30px; border-radius: 4px; border: 1px solid var(--border-dim); cursor: pointer; }
-        .hidden-native { width: 0; height: 0; opacity: 0; position: absolute; }
-        .image-source-controls { display: flex; gap: 15px; margin-bottom: 8px; font-size: 0.9rem; }
-        .image-source-controls label { cursor: pointer; display: flex; align-items: center; gap: 5px; }
-    </style>
     `;
 
     return html;
@@ -162,23 +153,32 @@ function setupColorPicker(id) {
     const native = qs(`#native-${id}`);
     if (!input || !preview) return;
 
+    // A. Click Preview -> Open Popover
     preview.onclick = () => {
-        openColorPicker(preview, (hex) => {
-            input.value = hex;
-            preview.style.background = hex;
-            if (native) native.value = toHex(hex);
-        }, () => { if (native) native.click(); });
+        openColorPicker(preview, (colorVar) => {
+            // On Select from Palette (colorVar is like "var(--base0B)")
+            input.value = colorVar;
+            preview.style.background = colorVar;
+
+            // Convert var(--...) to Hex for the native picker
+            if (native) native.value = resolveToHex(colorVar);
+        }, () => {
+            // On Custom Click -> Open Native
+            if (native) native.click();
+        });
     };
 
+    // B. Text Input Change (Manual typing)
     input.onchange = (e) => {
         const val = formatColor(e.target.value);
         preview.style.background = val;
-        if (native) native.value = toHex(val);
+        if (native) native.value = resolveToHex(val);
     };
 
+    // C. Native Picker Change (Custom Hex)
     if (native) {
         native.oninput = (e) => {
-            input.value = e.target.value;
+            input.value = e.target.value; // Native always gives hex
             preview.style.background = e.target.value;
         };
     }
