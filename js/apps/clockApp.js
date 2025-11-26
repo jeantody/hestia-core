@@ -33,7 +33,7 @@ export class ClockApp extends BaseApp {
             }
             if (dateEl) {
                 dateEl.innerText = now.toLocaleDateString([], {
-                    weekday: 'long', month: 'short', day: 'numeric'
+                    weekday: 'short', month: 'short', day: 'numeric'
                 });
             }
         };

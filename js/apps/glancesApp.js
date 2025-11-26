@@ -7,6 +7,7 @@ import { initMem } from "./glances/gMem.js";
 import { initNetwork } from "./glances/gNetwork.js";
 import { initSensors } from "./glances/gSensors.js";
 import { initDisk } from "./glances/gDisk.js";
+import { initDocker } from "./glances/gDocker.js";
 
 export class GlancesApp extends BaseApp {
     async render(app) {
@@ -42,6 +43,7 @@ export class GlancesApp extends BaseApp {
         else if (metric === 'net') updateLogic = initNetwork(el, config);
         else if (metric === 'sensors') updateLogic = initSensors(el, config);
         else if (metric === 'disk') updateLogic = initDisk(el, config);
+        else if (metric === 'docker') updateLogic = initDocker(el,config);
 
         // 4. Main Loop
         const runUpdate = async () => {
@@ -89,6 +91,7 @@ registry.register('glances', GlancesApp, {
                 { label: 'Memory (Graph)', value: 'mem' },
                 { label: 'Network (Graph)', value: 'net' },
                 { label: 'Disk I/O & Usage', value: 'disk' },
+                { label: 'Docker Containers', value: 'docker' },
                 { label: 'Temperatures (List)', value: 'sensors' }
             ]
         },
@@ -101,7 +104,7 @@ registry.register('glances', GlancesApp, {
             top: 0; left: 0; width: 100%; height: 100%;
             z-index: 1;
 
-            /* 2. LAYOUT (Like CalendarApp) - Internal Flow */
+            /* 2. LAYOUT - Internal Flow */
             display: flex;
             flex-direction: column;
             padding: 10px;
@@ -242,7 +245,7 @@ registry.register('glances', GlancesApp, {
         .net-row { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
         .net-row i { width: 14px; text-align: center; color: var(--yellow); }
 
-        /* Sensors List (Adapts like Calendar) */
+        /* Sensors List */
         .sensor-list {
             flex: 1; /* Stretch to fill */
             display: flex; flex-direction: column;
@@ -350,6 +353,50 @@ registry.register('glances', GlancesApp, {
         @keyframes pulse-text {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.6; }
+        }
+
+        /* --- DOCKER SPECIFIC --- */
+        .docker-grid {
+            flex: 1;
+            display: grid;
+            /* Cards are slightly larger than sensors */
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            grid-auto-rows: minmax(45px, 1fr);
+            gap: 5px;
+            overflow-y: auto;
+            min-height: 0;
+            align-content: start;
+        }
+        .docker-grid::-webkit-scrollbar { width: 0; }
+
+        .docker-card {
+            background: rgba(0,0,0,0.15);
+            border: 1px solid var(--border-dim);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            padding: 5px 10px;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+
+        .d-status-dot {
+            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+            background: var(--text-muted);
+            box-shadow: 0 0 5px currentColor;
+        }
+        .docker-card.running .d-status-dot { color: var(--status-success); background: currentColor; }
+        .docker-card.paused .d-status-dot { color: var(--status-warning); background: currentColor; }
+        .docker-card.stopped .d-status-dot { color: var(--status-error); background: currentColor; }
+
+        .d-info { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+        .d-name {
+            font-size: 0.8rem; font-weight: bold; color: var(--text-main);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .d-stats {
+            font-size: 0.65rem; color: var(--text-muted);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
     `
 });

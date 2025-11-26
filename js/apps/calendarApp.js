@@ -65,6 +65,13 @@ registry.register('calendar', CalendarApp, {
             gap: 2px; text-align: center; font-size: 0.75em;
             height: 100%; align-items: center;
         }
+
+        .app-card[data-rows="1"] .cal-grid { font-size: 0.6em; };
+        .app-card[data-cols="1"] .cal-grid { font-size: 0.6em; };
+
+        .app-card[data-rows="1"] .cal-header { font-size: 0.8em; };
+        .app-card[data-cols="1"] .cal-header { font-size: 0.8em; };
+
         .cal-head { color: var(--brand-secondary); font-weight: bold; font-size: 0.8em; }
         .cal-day { border-radius: 3px; display: flex; justify-content: center; align-items: center; height: 100%; cursor: default; }
         .cal-day:hover { background: var(--bg-highlight); }
