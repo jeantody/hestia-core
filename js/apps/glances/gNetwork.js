@@ -9,10 +9,6 @@ export function initNetwork(el, config) {
     bodyEl.innerHTML = `
         <div class="canvas-wrapper">
             <canvas class="glances-graph"></canvas>
-            <div class="net-overlay">
-                <div class="net-row"><i class="fa-solid fa-arrow-down"></i> <span id="net-rx">--</span></div>
-                <div class="net-row"><i class="fa-solid fa-arrow-up"></i> <span id="net-tx">--</span></div>
-            </div>
         </div>
         <div class="graph-meta"><span id="net-meta">RX: -- | TX: --</span></div>`;
 

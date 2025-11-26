@@ -4,8 +4,7 @@ export function initSensors(el, config) {
     const { url, apiVer } = config;
     const bodyEl = el.querySelector('.glances-body');
 
-    // 1. Setup DOM
-    bodyEl.innerHTML = `<div class="sensor-list" id="sensor-list">Scanning...</div>`;
+    bodyEl.innerHTML = `<div class="sensor-grid" id="sensor-grid">Scanning...</div>`;
     const titleEl = el.querySelector('.metric-title');
     const valEl = el.querySelector('.metric-value');
 
@@ -22,8 +21,8 @@ export function initSensors(el, config) {
         titleEl.innerText = "TEMPS";
         valEl.innerText = sensors.length > 0 ? sensors.length + " Active" : "--";
 
-        const list = el.querySelector('#sensor-list');
-        list.innerHTML = '';
+        const grid = el.querySelector('#sensor-grid');
+        grid.innerHTML = '';
 
         if (sensors.length > 0) {
             sensors.forEach(s => {
@@ -36,28 +35,23 @@ export function initSensors(el, config) {
 
                 const max = s.critical || 100;
                 const warn = s.warning || 80;
-                let percent = (s.value / max) * 100;
-                if (percent > 100) percent = 100;
 
-                let colorClass = 'default';
-                if (s.value >= max) colorClass = 'critical';
-                else if (s.value >= warn) colorClass = 'warning';
+                // Determine State Class
+                let stateClass = 'normal';
+                if (s.value >= max) stateClass = 'critical';
+                else if (s.value >= warn) stateClass = 'warning';
 
-                const row = document.createElement('div');
-                row.className = 'sensor-row';
-                row.innerHTML = `
-                    <div class="s-info">
-                        <span class="s-name">${label}</span>
-                        <span class="s-val ${colorClass}">${s.value.toFixed(0)}°</span>
-                    </div>
-                    <div class="s-bar-bg">
-                        <div class="s-bar ${colorClass}" style="width: ${percent}%"></div>
-                    </div>
+                // Create Card
+                const box = document.createElement('div');
+                box.className = `sensor-box ${stateClass}`;
+                box.innerHTML = `
+                    <div class="sb-name">${label}</div>
+                    <div class="sb-temp">${s.value.toFixed(0)}°</div>
                 `;
-                list.appendChild(row);
+                grid.appendChild(box);
             });
         } else {
-            list.innerHTML = '<div>No sensors found</div>';
+            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center;">No sensors found</div>';
         }
     };
 }

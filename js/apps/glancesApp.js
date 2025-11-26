@@ -1,3 +1,4 @@
+//
 import { BaseApp } from "./baseApp.js";
 import { registry } from "../registry.js";
 import { HISTORY_SIZE } from "./glances/gCore.js";
@@ -8,7 +9,7 @@ import { initSensors } from "./glances/gSensors.js";
 
 export class GlancesApp extends BaseApp {
     async render(app) {
-        // Generic shell
+        // We use the same structure as the Note/Calendar apps
         return `
             <div class="app-content app-type-glances">
                 <div class="glances-header">
@@ -92,26 +93,56 @@ registry.register('glances', GlancesApp, {
     ],
     css: `
         .app-type-glances {
-            display: flex; flex-direction: column;
-            padding: 15px; box-sizing: border-box;
-            width: 100%; height: 100%;
+            /* 1. POSITIONING (Like NoteApp) - Prevents Grid Movement */
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+
+            /* 2. LAYOUT (Like CalendarApp) - Internal Flow */
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            box-sizing: border-box;
             overflow: hidden;
             gap: 5px;
+            background: inherit;
+            color: inherit;
         }
-        .glances-header { display: flex; justify-content: space-between; align-items: baseline; flex-shrink: 0; }
-        .metric-title { font-size: 0.8rem; font-weight: bold; color: var(--text-muted); }
-        .metric-value { font-size: 1.4rem; font-weight: bold; font-family: monospace; color: var(--text-main); }
 
-        /* BODY CONTAINER */
+        /* --- HEADER --- */
+        .glances-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            flex-shrink: 0; /* Never shrink */
+            width: 100%;
+        }
+        .metric-title {
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .metric-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            font-family: monospace;
+            color: var(--text-main);
+            margin-left: 10px;
+        }
+
+        /* --- BODY CONTAINER --- */
         .glances-body {
-            flex: 1;
-            min-height: 0; /* CRITICAL for flex scrolling */
+            flex: 1; /* Occupy all remaining space */
+            width: 100%;
+            min-height: 0; /* Allow shrinking */
             position: relative;
             display: flex;
             flex-direction: column;
         }
 
-        /* GRAPH STYLES (CPU, MEM, NET) */
+        /* --- MODULES (Graph/Sensors) --- */
         .canvas-wrapper {
             flex: 1;
             width: 100%;
@@ -119,67 +150,132 @@ registry.register('glances', GlancesApp, {
             position: relative;
         }
         .glances-graph {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%;
-            height: 100%;
+            width: 100% !important;
+            height: 100% !important;
         }
+
+        /* Footer Meta */
         .graph-meta, .cpu-meta {
-            font-size: 0.75rem; color: var(--text-muted);
-            text-align: right; margin-top: 2px;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            flex-shrink: 0; /* Prevent squishing the footer */
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-align: right;
+            margin-top: 10px;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
-        /* NETWORK OVERLAY */
-        .net-overlay {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; justify-content: center;
-            padding-left: 10px; z-index: 5; pointer-events: none;
-        }
-        .net-row { display: flex; align-items: center; gap: 15px; font-size: 1.1rem; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
-        .net-row i { width: 20px; text-align: center; color: var(--yellow); }
+        /* Network Overlay */
+        .net-row { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+        .net-row i { width: 14px; text-align: center; color: var(--yellow); }
 
-        /* SENSORS (New Scrollable Logic) */
+        /* Sensors List (Adapts like Calendar) */
         .sensor-list {
-            overflow-y: auto;
+            flex: 1; /* Stretch to fill */
             display: flex; flex-direction: column;
-            gap: 6px; padding-right: 5px;
-            flex: 1; /* Fill remaining height */
-            min-height: 0; /* Allow it to shrink if container is small */
+            overflow-y: auto; /* Scroll ONLY if absolutely necessary */
+            gap: 4px; padding-right: 2px;
         }
+
+        .sensor-list::-webkit-scrollbar { width: 0; } /* Hide scrollbar for cleaner look */
+
         .sensor-row {
             display: flex; flex-direction: column; gap: 2px;
-            font-size: 0.85rem;
-            flex-shrink: 0; /* Don't squash individual rows */
+            font-size: 0.8rem;
+            flex-shrink: 0;
         }
-        .s-info { display: flex; justify-content: space-between; }
-        .s-name { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .s-info { display: flex; justify-content: space-between; width: 100%; }
+        .s-name { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; }
         .s-val { font-weight: bold; font-family: monospace; }
-
         .s-bar-bg { width: 100%; height: 4px; background: var(--bg-highlight); border-radius: 2px; overflow: hidden; }
         .s-bar { height: 100%; transition: width 0.5s; }
 
+        /* Colors */
         .s-bar.default { background-color: var(--text-muted); }
         .s-bar.warning { background-color: var(--status-warning); }
         .s-bar.critical { background-color: var(--status-error); }
         .s-val.warning { color: var(--status-warning); }
         .s-val.critical { color: var(--status-error); }
 
-        /* ADAPTIVE LOGIC (1x1 Mode) */
-        .app-card[data-cols="1"] .metric-title { font-size: 0.7rem; }
-        .app-card[data-cols="1"] .metric-value { font-size: 1.1rem; }
-
-        /* Hide Footer on small cards */
-        .app-card[data-cols="1"] .graph-meta,
-        .app-card[data-rows="1"] .graph-meta { display: none; }
-
-        .app-card[data-cols="1"] .net-row { font-size: 0.9rem; gap: 5px; }
-
-        /* Compact Sensors for 1x1 */
-        .app-card[data-cols="1"] .sensor-list { gap: 4px; }
+        /* --- ADAPTIVE (1x1) --- */
+        .app-card[data-cols="1"] .metric-title { font-size: 0.65rem; }
+        .app-card[data-cols="1"] .metric-value { font-size: 1.0rem; }
+        .app-card[data-cols="1"] .s-bar-bg { height: 2px; }
         .app-card[data-cols="1"] .sensor-row { font-size: 0.7rem; }
-        .app-card[data-cols="1"] .s-bar-bg { height: 3px; }
+
+        /* --- SENSORS GRID --- */
+        .sensor-grid {
+            flex: 1;
+            display: grid;
+            /* Auto-fit columns: Min 70px wide, Max 1fr (stretch to fill) */
+            grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+            /* Auto rows: Start at 60px height */
+            grid-auto-rows: minmax(60px, 1fr);
+            gap: 5px;
+            overflow-y: auto;
+            width: 100%;
+            align-content: start; /* Don't stretch rows if there are few items */
+        }
+
+        /* Hide Scrollbar */
+        .sensor-grid::-webkit-scrollbar { width: 0; }
+
+        .sensor-box {
+            background: rgba(0,0,0,0.15);
+            border: 1px solid var(--border-dim);
+            border-radius: var(--radius);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            transition: all 0.2s;
+        }
+
+        /* Name (Upper Left) */
+        .sb-name {
+            position: absolute;
+            top: 4px; left: 6px;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+            font-weight: bold;
+            text-transform: uppercase;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            max-width: 90%;
+        }
+
+        /* Temp (Center Big) */
+        .sb-temp {
+            font-size: 1.4rem;
+            font-weight: bold;
+            font-family: monospace;
+            margin-top: 10px; /* Offset slightly for the label */
+        }
+
+        /* Color Logic */
+        .sensor-box.normal { color: var(--status-success); }
+
+        .sensor-box.warning {
+            border-color: var(--status-warning);
+            color: var(--status-warning);
+            background: rgba(var(--status-warning), 0.05);
+        }
+        .sensor-box.warning .sb-name { color: var(--status-warning); opacity: 0.8; }
+
+        .sensor-box.critical {
+            border-color: var(--status-error);
+            color: var(--status-error);
+            background: rgba(var(--status-error), 0.1);
+        }
+        .sensor-box.critical .sb-name { color: var(--status-error); opacity: 0.8; }
+        .sensor-box.critical .sb-temp { animation: pulse-text 1s infinite; }
+
+        /* Adaptive 1x1 or Very Small */
+        .app-card[data-cols="1"] .metric-title { font-size: 0.65rem; }
+        .app-card[data-cols="1"] .metric-value { font-size: 1.0rem; }
+
+        @keyframes pulse-text {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
     `
 });

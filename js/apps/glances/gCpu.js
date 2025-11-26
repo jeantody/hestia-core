@@ -1,3 +1,4 @@
+//
 import { fetchGlances, drawGraph, HISTORY_SIZE } from "./gCore.js";
 
 export function initCpu(el, config) {
@@ -7,7 +8,7 @@ export function initCpu(el, config) {
     // 1. Setup DOM
     bodyEl.innerHTML = `
         <div class="canvas-wrapper"><canvas class="glances-graph"></canvas></div>
-        <div class="graph-meta">Cores: <span id="core-count">--</span></div>`;
+        <div class="graph-meta"><span id="cpu-meta">--</span></div>`;
 
     const canvas = el.querySelector('canvas');
     const ctx = canvas.getContext('2d');
@@ -33,7 +34,18 @@ export function initCpu(el, config) {
 
         titleEl.innerText = "CPU LOAD";
         valEl.innerText = cpu.total.toFixed(1) + '%';
-        el.querySelector('#core-count').innerText = core || '?';
+
+        let metaText = "C: ?";
+
+        if (core && core.phys && core.log) {
+            // We have explicit Physical vs Logical data
+            metaText = `C: ${core.phys} | T: ${core.log}`;
+        } else if (cpu.cpucore) {
+            // Fallback: Glances v2/v3 often puts total count here
+            metaText = `CPU: ${cpu.cpucore}`;
+        }
+
+        el.querySelector('#cpu-meta').innerText = metaText;
 
         dataPoints.push(cpu.total);
         if (dataPoints.length > HISTORY_SIZE) dataPoints.shift();
