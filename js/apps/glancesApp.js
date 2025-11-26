@@ -9,6 +9,7 @@ import { initSensors } from "./glances/gSensors.js";
 import { initDisk } from "./glances/gDisk.js";
 import { initDocker } from "./glances/gDocker.js";
 import { initProcess } from "./glances/gProcess.js";
+import { initUptime } from "./glances/gUptime.js";
 
 export class GlancesApp extends BaseApp {
     async render(app) {
@@ -29,7 +30,7 @@ export class GlancesApp extends BaseApp {
         const url = rawUrl.replace(/\/+$/, '').replace(/\/api\/\d+$/, '');
         const metric = app.data.metric || 'cpu';
         const apiVer = app.data.apiVer || '3';
-        const intervalTime = parseInt(app.data.interval) || 2000;
+        const intervalTime = parseInt(app.data.interval) || 1000;
 
         // 2. State
         const dataPoints = new Array(HISTORY_SIZE).fill(0);
@@ -46,6 +47,7 @@ export class GlancesApp extends BaseApp {
         else if (metric === 'disk') updateLogic = initDisk(el, config);
         else if (metric === 'docker') updateLogic = initDocker(el,config);
         else if (metric === 'process') updateLogic = initProcess(el, config);
+        else if (metric === 'uptime') updateLogic = initUptime(el, config);
 
         // 4. Main Loop
         const runUpdate = async () => {
@@ -95,10 +97,11 @@ registry.register('glances', GlancesApp, {
                 { label: 'Disk I/O & Usage', value: 'disk' },
                 { label: 'Docker Containers', value: 'docker' },
                 { label: 'Top Processes', value: 'process' },
-                { label: 'Temperatures (List)', value: 'sensors' }
+                { label: 'Temperatures (List)', value: 'sensors' },
+                { label: 'System Uptime', value: 'uptime' }
             ]
         },
-        { name: 'interval', label: 'Interval (ms)', type: 'text', defaultValue: '2000' }
+        { name: 'interval', label: 'Interval (ms)', type: 'text', defaultValue: '1000' }
     ],
     css: `
         .app-type-glances {
@@ -464,5 +467,42 @@ registry.register('glances', GlancesApp, {
         .app-card[data-cols="1"] .proc-header { display: none; }
         .app-card[data-cols="1"] .p-mem { display: none; }
         .app-card[data-cols="1"] .proc-row { font-size: 0.7rem; padding: 2px 5px; }
+
+        /* --- UPTIME --- */
+        .uptime-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            color: var(--text-main);
+        }
+
+        .ut-icon {
+            font-size: 2.5rem;
+            color: var(--brand-secondary); /* Nice orange/blue accent */
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .ut-val {
+            font-size: 1.8rem;
+            font-weight: bold;
+            font-family: monospace;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .ut-boot {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            opacity: 0.7;
+        }
+
+        /* Adaptive 1x1 */
+        .app-card[data-cols="1"] .ut-icon { font-size: 2rem; }
+        .app-card[data-cols="1"] .ut-val { font-size: 1.2rem; }
+        .app-card[data-cols="1"] .ut-boot { display: none; }
     `
 });
