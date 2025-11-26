@@ -6,3 +6,4 @@ import './calendarApp.js';
 import './clockApp.js';
 import './helloWorld.js';
 import './glancesApp.js';
+import './piholeApp.js';
