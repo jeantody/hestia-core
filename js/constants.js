@@ -132,7 +132,7 @@ export const DEFAULT_APPS = [
         "icon": "github",
         "bgColor": "var(--base06)",
         "textColor": "var(--base01)",
-        "hideLabel": "false"
+        "hideLabel": "true"
       }
     },
     {
