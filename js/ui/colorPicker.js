@@ -36,7 +36,7 @@ export function openColorPicker(targetEl, onSelect, onCustom) {
     const footer = createEl('div', { class: 'popover-footer' });
     const customBtn = createEl('button', {
         class: 'btn',
-        text: 'Custom Hex...',
+        text: 'Custom...',
         on: {
             click: () => {
                 closePopover();

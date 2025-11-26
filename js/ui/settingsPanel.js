@@ -80,8 +80,8 @@ function wireUpInputs() {
                 updateSetting(key, colorVar);
             }, () => {
                 // Clicked "Custom..." -> Open Native Picker
-                // MATCH HTML ID: "hidden-input-bgCanvas"
-                const native = qs(`#hidden-input-${key}`);
+                // MATCH HTML ID: "native-input-bgCanvas"
+                const native = qs(`#native-input-${key}`);
                 if (native) native.click();
             });
         };
@@ -89,8 +89,8 @@ function wireUpInputs() {
 
     // 4. Native Pickers (Hidden)
     qsa('.hidden-native-picker').forEach(picker => {
-        // MATCH HTML ID: "hidden-input-bgCanvas" -> Key: "bgCanvas"
-        const key = picker.id.replace('hidden-input-', '');
+        // MATCH HTML ID: "native-input-bgCanvas" -> Key: "bgCanvas"
+        const key = picker.id.replace('native-input-', '');
         picker.onchange = (e) => updateSetting(key, e.target.value);
     });
 
@@ -222,8 +222,8 @@ function syncInputs() {
         if (val) preview.style.backgroundColor = formatColor(val);
 
         // 2. Sync the hidden native picker
-        // MATCH HTML ID: "hidden-input-..."
-        const native = qs(`#hidden-input-${key}`);
+        // MATCH HTML ID: "native-input-..."
+        const native = qs(`#native-input-${key}`);
         if (native && val) {
             // Native picker needs HEX, but val might be "var(--base00)"
             // resolveToHex handles the translation
@@ -234,10 +234,10 @@ function syncInputs() {
         const resetBtn = qs(`#reset-${key}`);
         if (resetBtn) {
             // Compare HEX values to handle "var(--base00)" vs "#181818"
-            const currentHex = resolveToHex(val).toLowerCase();
-            const defaultHex = resolveToHex(def).toLowerCase();
+            const currentVal = String(val || '').trim();
+            const defaultVal = String(def || '').trim();
 
-            if (currentHex !== defaultHex) resetBtn.classList.add('visible');
+            if (currentVal !== defaultVal) resetBtn.classList.add('visible');
             else resetBtn.classList.remove('visible');
         }
     });
