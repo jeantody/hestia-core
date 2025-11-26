@@ -249,120 +249,6 @@ registry.register('glances', GlancesApp, {
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
-        /* Network Overlay */
-        .net-row { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; font-weight: bold; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
-        .net-row i { width: 14px; text-align: center; color: var(--yellow); }
-
-        /* Sensors List */
-        .sensor-list {
-            flex: 1; /* Stretch to fill */
-            display: flex; flex-direction: column;
-            overflow-y: auto; /* Scroll ONLY if absolutely necessary */
-            gap: 4px; padding-right: 2px;
-        }
-
-        .sensor-list::-webkit-scrollbar { width: 0; } /* Hide scrollbar for cleaner look */
-
-        .sensor-row {
-            display: flex; flex-direction: column; gap: 2px;
-            font-size: 0.8rem;
-            flex-shrink: 0;
-        }
-        .s-info { display: flex; justify-content: space-between; width: 100%; }
-        .s-name { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; }
-        .s-val { font-weight: bold; font-family: monospace; }
-        .s-bar-bg { width: 100%; height: 4px; background: var(--bg-highlight); border-radius: 2px; overflow: hidden; }
-        .s-bar { height: 100%; transition: width 0.5s; }
-
-        /* Colors */
-        .s-bar.default { background-color: var(--text-muted); }
-        .s-bar.warning { background-color: var(--status-warning); }
-        .s-bar.critical { background-color: var(--status-error); }
-        .s-val.warning { color: var(--status-warning); }
-        .s-val.critical { color: var(--status-error); }
-
-        /* --- ADAPTIVE (1x1) --- */
-        .app-card[data-cols="1"] .metric-title { font-size: 0.65rem; }
-        .app-card[data-cols="1"] .metric-value { font-size: 1.0rem; }
-        .app-card[data-cols="1"] .s-bar-bg { height: 2px; }
-        .app-card[data-cols="1"] .sensor-row { font-size: 0.7rem; }
-
-        /* --- SENSORS GRID --- */
-        .sensor-grid {
-            flex: 1;
-            display: grid;
-            /* Auto-fit columns: Min 100px wide, Max 1fr (stretch to fill) */
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            /* Auto rows: Start at 60px height */
-            grid-auto-rows: minmax(60px, 1fr);
-            gap: 5px;
-            overflow-y: auto;
-            width: 100%;
-            align-content: start; /* Don't stretch rows if there are few items */
-        }
-
-        /* Hide Scrollbar */
-        .sensor-grid::-webkit-scrollbar { width: 0; }
-
-        .sensor-box {
-            background: rgba(0,0,0,0.15);
-            border: 1px solid var(--border-dim);
-            border-radius: var(--radius);
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 5px;
-            transition: all 0.2s;
-        }
-
-        /* Name (Upper Left) */
-        .sb-name {
-            position: absolute;
-            top: 4px; left: 6px;
-            font-size: 0.6rem;
-            color: var(--text-muted);
-            font-weight: bold;
-            text-transform: uppercase;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-            max-width: 90%;
-        }
-
-        /* Temp (Center Big) */
-        .sb-temp {
-            font-size: 1.4rem;
-            font-weight: bold;
-            font-family: monospace;
-            margin-top: 10px; /* Offset slightly for the label */
-        }
-
-        /* Color Logic */
-        .sensor-box.normal { color: var(--status-success); }
-
-        .sensor-box.warning {
-            border-color: var(--status-warning);
-            color: var(--status-warning);
-            background: rgba(var(--status-warning), 0.05);
-        }
-        .sensor-box.warning .sb-name { color: var(--status-warning); opacity: 0.8; }
-
-        .sensor-box.critical {
-            border-color: var(--status-error);
-            color: var(--status-error);
-            background: rgba(var(--status-error), 0.1);
-        }
-        .sensor-box.critical .sb-name { color: var(--status-error); opacity: 0.8; }
-        .sensor-box.critical .sb-temp { animation: pulse-text 1s infinite; }
-
-        /* Adaptive 1x1 or Very Small */
-        .app-card[data-cols="1"] .metric-title { font-size: 0.65rem; }
-        .app-card[data-cols="1"] .metric-value { font-size: 1.0rem; }
-
-        @keyframes pulse-text {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
         /* --- DOCKER SPECIFIC --- */
         .docker-grid {
             flex: 1;
@@ -550,5 +436,89 @@ registry.register('glances', GlancesApp, {
             font-weight: bold;
             color: var(--text-main);
         }
+
+        /* --- SENSORS GRID (Vertical Minimalist) --- */
+        .sensor-grid {
+            flex: 1;
+            display: grid;
+            /* Fit as many 35px wide columns as possible */
+            grid-template-columns: repeat(auto-fit, minmax(35px, 1fr));
+            /* One row that stretches to fill the height */
+            grid-auto-rows: 1fr;
+            gap: 2px;
+            overflow-y: hidden; /* No scrolling, they fit horizontally */
+            padding-bottom: 5px;
+        }
+
+        .sensor-v-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end; /* Align content to bottom */
+            height: 100%;
+            padding: 5px 0;
+            position: relative;
+            transition: opacity 0.2s;
+        }
+        .sensor-v-bar:hover { background: rgba(255,255,255,0.05); border-radius: 4px; }
+
+        /* 1. Temp Value (Top) */
+        .sv-val {
+            font-size: 0.8rem;
+            font-weight: bold;
+            font-family: monospace;
+            margin-bottom: 5px;
+            color: var(--text-main);
+        }
+
+        /* 2. The Bar (Middle - Flex to fill height) */
+        .sv-track {
+            flex: 1;
+            width: 6px; /* Thin bar */
+            background: var(--bg-highlight);
+            border-radius: 3px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 5px;
+        }
+        .sv-fill {
+            position: absolute;
+            bottom: 0; left: 0; width: 100%;
+            transition: height 0.5s ease-out;
+            border-radius: 3px;
+            min-height: 2px; /* Always show a speck */
+        }
+
+        /* 3. Name (Bottom - Vertical) */
+        .sv-name {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            /* Vertical Text Mode */
+            writing-mode: vertical-rl;
+            transform: rotate(180deg); /* Flip so it reads bottom-to-top */
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-height: 60px; /* Limit label height */
+        }
+
+        /* --- THRESHOLD COLORS --- */
+
+        /* < 45 (Cool/Idle) - Blue */
+        .sensor-v-bar.cool .sv-fill { background: var(--blue); }
+        .sensor-v-bar.cool .sv-val { color: var(--text-muted); }
+
+        /* 45-65 (Careful/Load) - Green (Success) */
+        .sensor-v-bar.careful .sv-fill { background: var(--status-success); }
+        .sensor-v-bar.careful .sv-val { color: var(--status-success); }
+
+        /* 65-80 (Warning) - Orange */
+        .sensor-v-bar.warning .sv-fill { background: var(--status-warning); }
+        .sensor-v-bar.warning .sv-val { color: var(--status-warning); }
+
+        /* > 80 (Critical) - Red */
+        .sensor-v-bar.critical .sv-fill { background: var(--status-error); }
+        .sensor-v-bar.critical .sv-val { color: var(--status-error); font-weight: 900; }
     `
 });
