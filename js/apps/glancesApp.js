@@ -168,7 +168,7 @@ registry.register('glances', GlancesApp, {
         }
 
         /* --- GRAPH & IO --- */
-.canvas-wrapper {
+        .canvas-wrapper {
             width: 100%; position: relative; overflow: hidden;
             flex: 1; /* Default for CPU/Mem (grows to fill) */
         }
@@ -280,8 +280,8 @@ registry.register('glances', GlancesApp, {
         .sensor-grid {
             flex: 1;
             display: grid;
-            /* Auto-fit columns: Min 70px wide, Max 1fr (stretch to fill) */
-            grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+            /* Auto-fit columns: Min 100px wide, Max 1fr (stretch to fill) */
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
             /* Auto rows: Start at 60px height */
             grid-auto-rows: minmax(60px, 1fr);
             gap: 5px;
