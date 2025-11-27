@@ -6,10 +6,10 @@ import { registry } from "./registry.js";
 import { VirtualGrid } from "./grid/virtualGrid.js";
 
 // -----------------------------
-// GRID RENDERING (Reconciliation)
+// GRID RENDERING (Reconciliation + FLIP Animation)
 // -----------------------------
 
-export async function renderGrid() {
+export async function renderGrid(dragInfo = null) {
     const dashboard = qs('#dashboard');
     if (!dashboard) return;
 
@@ -17,18 +17,28 @@ export async function renderGrid() {
 
     const apps = state.apps;
     const domMap = new Map();
+    const prevRects = new Map();
+
+    // 1. Snapshot OLD Positions (First)
     qsa('.app-card', dashboard).forEach(el => {
         const id = parseInt(el.dataset.id);
-        if (id) domMap.set(id, el);
+        if (id) {
+            domMap.set(id, el);
+            prevRects.set(id, el.getBoundingClientRect());
+        }
     });
 
+    // Override the dragged item's "Old" position with its "Floating" position
+    if (dragInfo && dragInfo.id && dragInfo.rect) {
+        prevRects.set(dragInfo.id, dragInfo.rect);
+    }
+
+    // 2. Update DOM (Last)
     for (const app of apps) {
         let el = domMap.get(app.id);
 
         if (el) {
-            // --- UPDATE EXISTING ---
-
-            // 1. Position Check
+            // Check for position/size changes
             const currentX = parseInt(el.dataset.x);
             const currentY = parseInt(el.dataset.y);
             const currentW = parseInt(el.dataset.cols);
@@ -38,16 +48,13 @@ export async function renderGrid() {
                 applyGridPosition(el, app.x, app.y, app.cols, app.rows);
             }
 
-            // 2. Content & Style Check (Fix for "Edits not showing")
-            // We create a signature of the data to see if it changed
+            // Check for content changes
             const dataHash = JSON.stringify(app.data || {}) + app.name;
             const currentHash = el.dataset.contentHash;
 
-            // Always update basic styles (fast)
             if (app.data?.bgColor) el.style.backgroundColor = app.data.bgColor;
             if (app.data?.textColor) el.style.color = app.data.textColor;
 
-            // If content changed, re-mount the inner app
             if (dataHash !== currentHash) {
                 await mountAppContent(el, app);
                 el.dataset.contentHash = dataHash;
@@ -55,14 +62,63 @@ export async function renderGrid() {
 
             domMap.delete(app.id);
         } else {
-            // --- CREATE NEW ---
+            // Create New
             el = await createAppElement(app);
             dashboard.appendChild(el);
         }
     }
 
+    // Cleanup removed apps
     domMap.forEach(el => el.remove());
+
+    // 3. Invert & Play (Animate)
+    // Double RAF ensures the DOM update is fully processed before we calculate deltas
+    requestAnimationFrame(() => {
+        const animations = [];
+
+        apps.forEach(app => {
+            const el = document.getElementById(`app-${app.id}`);
+            const oldRect = prevRects.get(app.id);
+
+            if (el && oldRect) {
+                const newRect = el.getBoundingClientRect();
+
+                // Calculate Delta
+                const dX = oldRect.left - newRect.left;
+                const dY = oldRect.top - newRect.top;
+
+                // Only animate significant moves
+                if (Math.abs(dX) > 1 || Math.abs(dY) > 1) {
+                    // INVERT (Start State): Move back to old position instantly
+                    el.style.transition = 'none';
+                    el.style.transform = `translate(${dX}px, ${dY}px)`;
+                    el.style.zIndex = '100'; // Float above others
+
+                    animations.push(el);
+                }
+            }
+        });
+
+        // PLAY (End State): Remove transform smoothly
+        // Nested RAF forces the browser to paint the 'Invert' state first
+        requestAnimationFrame(() => {
+            animations.forEach(el => {
+                el.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                el.style.transform = '';
+
+                // Cleanup Z-Index
+                const cleanup = () => {
+                    el.style.zIndex = '';
+                    el.style.transition = '';
+                    el.removeEventListener('transitionend', cleanup);
+                };
+                el.addEventListener('transitionend', cleanup);
+            });
+        });
+    });
 }
+
+// ... (Rest of helpers remain identical) ...
 
 async function createAppElement(app) {
     const el = createEl('div', {
@@ -75,11 +131,9 @@ async function createAppElement(app) {
 
     applyGridPosition(el, app.x, app.y, app.cols, app.rows);
 
-    // Initial Styles
     if (app.data?.bgColor) el.style.backgroundColor = app.data.bgColor;
     if (app.data?.textColor) el.style.color = app.data.textColor;
 
-    // Initial Hash
     el.dataset.contentHash = JSON.stringify(app.data || {}) + app.name;
 
     await mountAppContent(el, app);
@@ -87,16 +141,12 @@ async function createAppElement(app) {
     return el;
 }
 
-// Extracted logic to allow re-mounting existing apps
 async function mountAppContent(el, app) {
     const appDef = registry.get(app.subtype);
-
     let innerHTML = 'Unknown App';
     if (appDef) {
         const appInstance = new appDef.Class();
         innerHTML = await appInstance.render(app);
-
-        // Re-inject structure
         el.innerHTML = `
             ${innerHTML}
             <div class="resize-handle"></div>
@@ -104,11 +154,7 @@ async function mountAppContent(el, app) {
             <div class="edit-btn" title="Edit App"><i class="fa-solid fa-pencil"></i></div>
             <div class="delete-btn" title="Delete App"><i class="fa-solid fa-trash"></i></div>
         `;
-
-        // Trigger Lifecycle
-        if (appInstance.onMount) {
-            setTimeout(() => appInstance.onMount(el, app), 0);
-        }
+        if (appInstance.onMount) setTimeout(() => appInstance.onMount(el, app), 0);
     } else {
         el.innerHTML = innerHTML;
     }
@@ -121,7 +167,6 @@ export function applyGridPosition(el, x, y, w, h) {
     el.dataset.y = y;
     el.dataset.cols = w;
     el.dataset.rows = h;
-
     const meta = el.querySelector('.card-meta');
     if (meta) meta.innerText = `${w}x${h}`;
 }
@@ -129,11 +174,9 @@ export function applyGridPosition(el, x, y, w, h) {
 export function renderGridLines() {
     const gridLines = qs('#gridLines');
     if (!gridLines) return;
-
     const cols = parseInt(state.settings.theme.gridColumns) || 10;
     const rows = parseInt(state.settings.theme.gridRows) || 6;
     const count = cols * rows;
-
     if (gridLines.childElementCount !== count) {
         gridLines.innerHTML = '';
         for (let i = 0; i < count; i++) {
@@ -146,7 +189,6 @@ export function findEmptySlot(w, h) {
     const cols = parseInt(state.settings.theme.gridColumns) || 10;
     const rows = parseInt(state.settings.theme.gridRows) || 6;
     const vGrid = new VirtualGrid(cols, rows, state.apps);
-
     for (let y = 1; y <= rows; y++) {
         for (let x = 1; x <= cols; x++) {
             if (x + w - 1 > cols || y + h - 1 > rows) continue;
@@ -156,8 +198,5 @@ export function findEmptySlot(w, h) {
     return { x: 1, y: 1 };
 }
 
-export function saveGridState() {
-    saveState();
-}
-
+export function saveGridState() { saveState(); }
 export function sanitizeGrid() {}

@@ -4,71 +4,54 @@
 
 .app-card {
     background-color: var(--bg-surface);
-    border: 1px solid transparent; /* Default transparent border */
+    border: 1px solid transparent;
     border-radius: var(--radius);
     display: flex; flex-direction: column; justify-content: center; align-items: center;
     position: relative; z-index: 10;
 
-    /* Smooth transitions for Grid Swapping & Theme Toggles */
-    transition: box-shadow 0.2s, background-color 0.2s, border-color 0.2s,
-                grid-column 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
-                grid-row 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: box-shadow 0.2s, background-color 0.2s, border-color 0.2s;
 
     color: var(--text-main);
     overflow: hidden; min-height: 0; min-width: 0;
 }
-
-/* --- THEME TOGGLES --- */
 
 /* Shadows */
 body.shadow-on .app-card {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
-/* Outlines */
-/* This overrides the transparent border above */
 .dashboard-container.show-outlines .app-card {
     border-color: var(--border-dim);
 }
 
-/* --- EDIT MODE --- */
 .dashboard-container.edit-mode .app-card {
     cursor: grab;
-    border-color: var(--border-bright); /* Edit mode forces outlines */
+    border-color: var(--border-bright);
     border-style: solid;
     animation: shake-gentle 0.25s infinite;
 }
 .dashboard-container.edit-mode .app-card:hover { border-color: var(--brand-primary); }
 
-/* MOVING STATE (Floating under mouse) */
 .dashboard-container.edit-mode .app-card.moving {
     cursor: grabbing;
     opacity: 0.9;
     z-index: 1000;
-    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5); /* Heavier shadow when dragging */
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5);
     animation: none;
     transform: scale(1.02);
     transition: none;
 }
 
-/* GHOST PLACEHOLDER */
+/* Base Ghost */
 .grid-ghost {
-    background: rgba(255, 255, 255, 0.03);
-    border: 2px dashed var(--text-muted);
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: var(--radius);
     z-index: 1;
-    opacity: 0.5;
     pointer-events: none;
-    transition: grid-column 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
-                grid-row 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    transition: all 0.1s ease-out;
 }
 
-.app-card.collision {
-    border-color: var(--status-error) !important;
-    background-color: rgb(from var(--status-error) r g b / 20%) !important;
-}
-
-/* Base Ghost Styles (Refining the ghost visuals) */
 .grid-ghost.ghost-valid {
     border-color: var(--status-success);
     background: rgba(var(--status-success-rgb, 161, 181, 108), 0.1);
@@ -91,7 +74,6 @@ body.shadow-on .app-card {
     100% { opacity: 0.4; }
 }
 
-/* Controls */
 .edit-btn, .delete-btn {
     position: absolute; width: 30px; height: 30px;
     border-radius: 4px; color: white;
