@@ -38,9 +38,11 @@ export function initGlobalEvents() {
 
         e.preventDefault();
 
+        // 1. Capture Mouse Start
         initX = e.clientX;
         initY = e.clientY;
 
+        // 2. Capture Grid Start
         sGX = parseInt(actItem.dataset.x);
         sGY = parseInt(actItem.dataset.y);
         sC = parseInt(actItem.dataset.cols);
@@ -69,6 +71,7 @@ export function initGlobalEvents() {
         const cW = gridRect.width / cols;
         const cH = gridRect.height / rows;
 
+        // Calculate Delta from the *current* anchor point (initX/initY)
         const gDx = Math.round((e.clientX - initX) / cW);
         const gDy = Math.round((e.clientY - initY) / cH);
 
@@ -82,47 +85,62 @@ export function initGlobalEvents() {
             if (nY + sR - 1 > rows) nY = rows - sR + 1;
 
             const currentApp = state.apps.find(a => a.id === parseInt(actItem.dataset.id));
+
+            // Optimization: Don't do heavy collision math if we haven't changed grid cells
             if (currentApp.x === nX && currentApp.y === nY) return;
 
-            // --- SWAP LOGIC START ---
             const vGrid = new VirtualGrid(cols, rows, state.apps);
-            const targetId = vGrid.getAppAt(nX, nY);
+            const targetId = vGrid.scanForCollision(nX, nY, sC, sR, currentApp.id);
 
-            // 1. FREE MOVE: Is the target slot completely empty?
-            if (vGrid.isAreaFree(nX, nY, sC, sR, currentApp.id)) {
-                currentApp.x = nX;
-                currentApp.y = nY;
-                renderGrid();
+            // Case A: Free Move (No collision)
+            if (!targetId) {
+                if (vGrid.isAreaFree(nX, nY, sC, sR, currentApp.id)) {
+                    currentApp.x = nX;
+                    currentApp.y = nY;
+                    renderGrid();
+
+                    // Note: We don't re-anchor on free move to keep the drag feeling "elastic"
+                }
             }
-            // 2. SWAP: We hit another card. Can we swap?
-            else if (targetId && targetId !== currentApp.id) {
+            // Case B: Collision -> Swap Attempt
+            else {
                 const targetApp = state.apps.find(a => a.id === targetId);
 
-                // Check A: Does the target card fit in OUR old spot?
-                // We exclude currentApp.id because it is leaving that spot.
-                const canTargetMove = vGrid.isAreaFree(currentApp.x, currentApp.y, targetApp.cols, targetApp.rows, [currentApp.id, targetApp.id]);
+                const canTargetMove = vGrid.isAreaFree(
+                    currentApp.x, currentApp.y,
+                    targetApp.cols, targetApp.rows,
+                    [currentApp.id, targetApp.id]
+                );
 
-                // Check B: Do WE fit in the target's spot?
-                // We exclude targetApp.id because it is moving away.
-                // We exclude currentApp.id because we are moving in.
-                const canSourceMove = vGrid.isAreaFree(targetApp.x, targetApp.y, currentApp.cols, currentApp.rows, [currentApp.id, targetApp.id]);
+                const canSourceMove = vGrid.isAreaFree(
+                    targetApp.x, targetApp.y,
+                    currentApp.cols, currentApp.rows,
+                    [currentApp.id, targetApp.id]
+                );
 
                 if (canTargetMove && canSourceMove) {
-                    // Perform Swap
+                    // 1. Perform Swap
                     const oldX = currentApp.x;
                     const oldY = currentApp.y;
 
-                    // We take their exact spot (snap to grid), not just mouse position
                     currentApp.x = targetApp.x;
                     currentApp.y = targetApp.y;
 
                     targetApp.x = oldX;
                     targetApp.y = oldY;
 
+                    // 2. RE-ANCHOR DRAG (This fixes the "Spazzing"!) 🛑
+                    // We reset the drag origin to the current mouse position
+                    // and the Grid Start (sGX) to the new location.
+                    // This prevents the logic from calculating a "collision" again in the next frame.
+                    initX = e.clientX;
+                    initY = e.clientY;
+                    sGX = currentApp.x;
+                    sGY = currentApp.y;
+
                     renderGrid();
                 }
             }
-            // --- SWAP LOGIC END ---
 
         } else if (mode === 'resize') {
             let nC = sC + gDx;
