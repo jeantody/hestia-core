@@ -42,6 +42,21 @@ body.shadow-on .app-card {
     transition: none;
 }
 
+/* --- VIEW TRANSITION TUNING (The Snappy Fix) --- */
+/* Target all view transition groups to apply consistent easing */
+::view-transition-group(*) {
+    animation-duration: 0.3s;
+    animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1); /* Fast start, smooth stop */
+}
+
+/* Remove cross-fade for a solid slide feel */
+::view-transition-old(*),
+::view-transition-new(*) {
+    mix-blend-mode: normal;
+    height: 100%;
+    width: 100%;
+}
+
 /* Base Ghost */
 .grid-ghost {
     border: 2px dashed rgba(255, 255, 255, 0.3);

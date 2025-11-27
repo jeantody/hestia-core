@@ -6,119 +6,112 @@ import { registry } from "./registry.js";
 import { VirtualGrid } from "./grid/virtualGrid.js";
 
 // -----------------------------
-// GRID RENDERING (Reconciliation + FLIP Animation)
+// GRID RENDERING (View Transitions API)
 // -----------------------------
 
+/**
+ * @param {Object} dragInfo - { id: number, dropType: 'success' | 'fail' }
+ */
 export async function renderGrid(dragInfo = null) {
     const dashboard = qs('#dashboard');
     if (!dashboard) return;
 
     renderGridLines();
 
-    const apps = state.apps;
-    const domMap = new Map();
-    const prevRects = new Map();
+    // Helper to perform the actual DOM updates
+    const updateDOM = async () => {
 
-    // 1. Snapshot OLD Positions (First)
-    qsa('.app-card', dashboard).forEach(el => {
-        const id = parseInt(el.dataset.id);
-        if (id) {
-            domMap.set(id, el);
-            prevRects.set(id, el.getBoundingClientRect());
-        }
-    });
-
-    // Override the dragged item's "Old" position with its "Floating" position
-    if (dragInfo && dragInfo.id && dragInfo.rect) {
-        prevRects.set(dragInfo.id, dragInfo.rect);
-    }
-
-    // 2. Update DOM (Last)
-    for (const app of apps) {
-        let el = domMap.get(app.id);
-
-        if (el) {
-            // Check for position/size changes
-            const currentX = parseInt(el.dataset.x);
-            const currentY = parseInt(el.dataset.y);
-            const currentW = parseInt(el.dataset.cols);
-            const currentH = parseInt(el.dataset.rows);
-
-            if (currentX !== app.x || currentY !== app.y || currentW !== app.cols || currentH !== app.rows) {
-                applyGridPosition(el, app.x, app.y, app.cols, app.rows);
+        // --- 1. FORCE CLEANUP (Moved outside the loop for safety) ---
+        // This guarantees the floating card is reset, even if the state loop is busy.
+        if (dragInfo && dragInfo.id) {
+            const draggedEl = document.getElementById(`app-${dragInfo.id}`);
+            if (draggedEl) {
+                draggedEl.classList.remove('moving');
+                draggedEl.style.position = '';
+                draggedEl.style.width = '';
+                draggedEl.style.height = '';
+                draggedEl.style.left = '';
+                draggedEl.style.top = '';
+                draggedEl.style.zIndex = '';
             }
-
-            // Check for content changes
-            const dataHash = JSON.stringify(app.data || {}) + app.name;
-            const currentHash = el.dataset.contentHash;
-
-            if (app.data?.bgColor) el.style.backgroundColor = app.data.bgColor;
-            if (app.data?.textColor) el.style.color = app.data.textColor;
-
-            if (dataHash !== currentHash) {
-                await mountAppContent(el, app);
-                el.dataset.contentHash = dataHash;
-            }
-
-            domMap.delete(app.id);
-        } else {
-            // Create New
-            el = await createAppElement(app);
-            dashboard.appendChild(el);
         }
-    }
 
-    // Cleanup removed apps
-    domMap.forEach(el => el.remove());
+        const apps = state.apps;
+        const domMap = new Map();
 
-    // 3. Invert & Play (Animate)
-    // Double RAF ensures the DOM update is fully processed before we calculate deltas
-    requestAnimationFrame(() => {
-        const animations = [];
+        qsa('.app-card', dashboard).forEach(el => {
+            const id = parseInt(el.dataset.id);
+            if (id) domMap.set(id, el);
+        });
 
-        apps.forEach(app => {
-            const el = document.getElementById(`app-${app.id}`);
-            const oldRect = prevRects.get(app.id);
+        for (const app of apps) {
+            let el = domMap.get(app.id);
 
-            if (el && oldRect) {
-                const newRect = el.getBoundingClientRect();
-
-                // Calculate Delta
-                const dX = oldRect.left - newRect.left;
-                const dY = oldRect.top - newRect.top;
-
-                // Only animate significant moves
-                if (Math.abs(dX) > 1 || Math.abs(dY) > 1) {
-                    // INVERT (Start State): Move back to old position instantly
-                    el.style.transition = 'none';
-                    el.style.transform = `translate(${dX}px, ${dY}px)`;
-                    el.style.zIndex = '100'; // Float above others
-
-                    animations.push(el);
+            if (el) {
+                // UPDATE EXISTING
+                // Ensure Transition Name is set
+                if (!el.style.viewTransitionName) {
+                    el.style.viewTransitionName = `app-${app.id}`;
                 }
+
+                const currentX = parseInt(el.dataset.x);
+                const currentY = parseInt(el.dataset.y);
+                const currentW = parseInt(el.dataset.cols);
+                const currentH = parseInt(el.dataset.rows);
+
+                if (currentX !== app.x || currentY !== app.y || currentW !== app.cols || currentH !== app.rows) {
+                    applyGridPosition(el, app.x, app.y, app.cols, app.rows);
+                }
+
+                // Content Check
+                const dataHash = JSON.stringify(app.data || {}) + app.name;
+                const currentHash = el.dataset.contentHash;
+
+                if (app.data?.bgColor) el.style.backgroundColor = app.data.bgColor;
+                if (app.data?.textColor) el.style.color = app.data.textColor;
+
+                if (dataHash !== currentHash) {
+                    await mountAppContent(el, app);
+                    el.dataset.contentHash = dataHash;
+                }
+
+                domMap.delete(app.id);
+            } else {
+                // CREATE NEW
+                el = await createAppElement(app);
+                dashboard.appendChild(el);
             }
+        }
+
+        // Cleanup removed apps
+        domMap.forEach(el => el.remove());
+    };
+
+    // --- THE ANIMATION TRIGGER ---
+    if (document.startViewTransition) {
+        let styleTag = null;
+
+        // Success: Snap instantly. Fail: Animate back.
+        if (dragInfo && dragInfo.id && dragInfo.dropType === 'success') {
+            styleTag = document.createElement('style');
+            styleTag.innerHTML = `
+                ::view-transition-group(app-${dragInfo.id}) {
+                    animation-duration: 0s !important;
+                }
+            `;
+            document.head.appendChild(styleTag);
+        }
+
+        const transition = document.startViewTransition(() => updateDOM());
+
+        transition.finished.finally(() => {
+            if (styleTag) styleTag.remove();
         });
 
-        // PLAY (End State): Remove transform smoothly
-        // Nested RAF forces the browser to paint the 'Invert' state first
-        requestAnimationFrame(() => {
-            animations.forEach(el => {
-                el.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
-                el.style.transform = '';
-
-                // Cleanup Z-Index
-                const cleanup = () => {
-                    el.style.zIndex = '';
-                    el.style.transition = '';
-                    el.removeEventListener('transitionend', cleanup);
-                };
-                el.addEventListener('transitionend', cleanup);
-            });
-        });
-    });
+    } else {
+        updateDOM();
+    }
 }
-
-// ... (Rest of helpers remain identical) ...
 
 async function createAppElement(app) {
     const el = createEl('div', {
@@ -128,6 +121,8 @@ async function createAppElement(app) {
             'data-id': app.id
         }
     });
+
+    el.style.viewTransitionName = `app-${app.id}`;
 
     applyGridPosition(el, app.x, app.y, app.cols, app.rows);
 
@@ -140,6 +135,8 @@ async function createAppElement(app) {
 
     return el;
 }
+
+// ... (Rest of helpers remain unchanged) ...
 
 async function mountAppContent(el, app) {
     const appDef = registry.get(app.subtype);

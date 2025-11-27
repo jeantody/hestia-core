@@ -1,4 +1,3 @@
-// js/events.js
 import { state, setState } from "./state.js";
 import { qs } from "./dom.js";
 import { renderGrid, applyGridPosition, saveGridState } from "./grid.js";
@@ -29,6 +28,11 @@ export function initGlobalEvents() {
         const gridLines = qs('#gridLines');
         if (gridLines) gridRect = gridLines.getBoundingClientRect();
         else return;
+
+        if (actItem.style.viewTransitionName) {
+             actItem.dataset.vtn = actItem.style.viewTransitionName;
+             actItem.style.viewTransitionName = '';
+        }
 
         if (e.target.closest('.resize-handle')) {
             mode = 'resize';
@@ -157,18 +161,12 @@ export function initGlobalEvents() {
             return;
         }
 
+        if (actItem.dataset.vtn) {
+            actItem.style.viewTransitionName = actItem.dataset.vtn;
+            delete actItem.dataset.vtn;
+        }
+
         if (mode === 'move') {
-            // CAPTURE DROP POSITION BEFORE RESET
-            const dropRect = actItem.getBoundingClientRect();
-
-            actItem.classList.remove('moving');
-            actItem.style.position = '';
-            actItem.style.width = '';
-            actItem.style.height = '';
-            actItem.style.left = '';
-            actItem.style.top = '';
-            actItem.style.zIndex = '';
-
             if (lastMoveResult && lastMoveResult.possible) {
                 app.x = lastMoveResult.targetX;
                 app.y = lastMoveResult.targetY;
@@ -179,11 +177,12 @@ export function initGlobalEvents() {
                     });
                 }
                 saveGridState();
-                // PASS DROP RECT TO RENDERER FOR ANIMATION
-                renderGrid({ id: app.id, rect: dropRect });
+                // SUCCESS: Update Data + Render (with Snap)
+                renderGrid({ id: app.id, dropType: 'success' });
             } else {
-                applyGridPosition(actItem, app.x, app.y, app.cols, app.rows);
-                renderGrid();
+                // FAILURE: No Data Change + Render (with Animation)
+                // We do NOT manually reset actItem styles here; renderGrid handles it
+                renderGrid({ id: app.id, dropType: 'fail' });
             }
         }
         else if (mode === 'resize') {
