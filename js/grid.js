@@ -140,21 +140,26 @@ export function renderGridLines() {
  */
 export function findEmptySlot(w, h) {
     const cols = parseInt(state.settings.theme.gridColumns) || 10;
+    const rows = parseInt(state.settings.theme.gridRows) || 6;
 
-    // Create a temporary grid to check for space (scan deep)
-    const vGrid = new VirtualGrid(cols, 100, state.apps);
+    // Use the class we just wrote!
+    const vGrid = new VirtualGrid(cols, rows, state.apps);
 
-    for (let y = 1; y <= 100; y++) {
+    // Naive scan top-to-bottom, left-to-right
+    for (let y = 1; y <= rows; y++) {
         for (let x = 1; x <= cols; x++) {
-            // Boundary Check
-            if (x + w - 1 > cols) continue;
+            // Check bounds
+            if (x + w - 1 > cols || y + h - 1 > rows) continue;
 
-            // Collision Check
-            if (vGrid.isAreaFree(x, y, w, h)) {
+            // Check collision using our new method
+            const collisions = vGrid.getAppsInArea(x, y, w, h);
+            if (collisions.length === 0) {
                 return { x, y };
             }
         }
     }
+
+    // Fallback if full
     return { x: 1, y: 1 };
 }
 
