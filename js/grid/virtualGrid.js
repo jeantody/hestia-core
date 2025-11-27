@@ -12,10 +12,16 @@ export class VirtualGrid {
     buildMatrix(apps) {
         const m = Array.from({ length: this.rows }, () => Array(this.cols).fill(null));
         for (const app of apps) {
-            for (let r = 0; r < app.rows; r++) {
-                for (let c = 0; c < app.cols; c++) {
-                    const y = app.y + r - 1;
-                    const x = app.x + c - 1;
+            // FORCE INT: Protect against string coordinates causing OOB errors
+            const ax = parseInt(app.x);
+            const ay = parseInt(app.y);
+            const ac = parseInt(app.cols);
+            const ar = parseInt(app.rows);
+
+            for (let r = 0; r < ar; r++) {
+                for (let c = 0; c < ac; c++) {
+                    const y = ay + r - 1;
+                    const x = ax + c - 1;
                     if (this.isInBounds(x, y)) {
                         m[y][x] = app.id;
                     }
@@ -29,21 +35,14 @@ export class VirtualGrid {
         return x >= 0 && x < this.cols && y >= 0 && y < this.rows;
     }
 
-    /**
-     * Check if area is free (used by resize logic)
-     */
     isAreaFree(x, y, w, h, ignoreId = null) {
         for (let r = 0; r < h; r++) {
             for (let c = 0; c < w; c++) {
                 const targetY = y + r - 1;
                 const targetX = x + c - 1;
-
                 if (!this.isInBounds(targetX, targetY)) return false;
-
                 const cellId = this.matrix[targetY][targetX];
-                if (cellId !== null && cellId !== ignoreId) {
-                    return false;
-                }
+                if (cellId !== null && cellId !== ignoreId) return false;
             }
         }
         return true;
@@ -57,9 +56,7 @@ export class VirtualGrid {
             for (let c = 0; c < w; c++) {
                 const targetY = y + r - 1;
                 const targetX = x + c - 1;
-
                 if (!this.isInBounds(targetX, targetY)) continue;
-
                 const cellId = this.matrix[targetY][targetX];
                 if (cellId !== null && cellId !== ignoreId) {
                     if (!foundIds.has(cellId)) {
@@ -70,6 +67,12 @@ export class VirtualGrid {
             }
         }
         return foundApps;
+    }
+
+    // Helper: Generic Intersection Check
+    rectsIntersect(x1, y1, w1, h1, x2, y2, w2, h2) {
+        return x1 < x2 + w2 && x1 + w1 > x2 &&
+               y1 < y2 + h2 && y1 + h1 > y2;
     }
 
     checkMove(sourceApp, targetX, targetY) {
@@ -87,15 +90,6 @@ export class VirtualGrid {
             return { possible: true, type: 'move', targetX, targetY, displaced: [] };
         }
 
-        // --- NEW SAFETY CHECK ---
-        // We must ensure that any app we displace does not accidentally land
-        // INSIDE the area the Source App is currently claiming (targetX, targetY).
-        // This prevents "Stacking" when the Old Source Pos and New Source Pos overlap.
-        const intersectsSourceNew = (nx, ny, w, h) => {
-            return (nx < targetX + sourceApp.cols && nx + w > targetX &&
-                    ny < targetY + sourceApp.rows && ny + h > targetY);
-        };
-
         // CASE B: ATOMIC SWAP (Big moves to Small/Empty)
         const isIntegritySound = collisions.every(c => {
             return c.x >= targetX &&
@@ -105,9 +99,13 @@ export class VirtualGrid {
         });
 
         if (isIntegritySound) {
+            // Normalize Bounding Box (Fixes "Far Destination" bug)
+            const minX = Math.min(...collisions.map(c => c.x));
+            const minY = Math.min(...collisions.map(c => c.y));
+
             const proposedMoves = collisions.map(c => {
-                const relX = c.x - targetX;
-                const relY = c.y - targetY;
+                const relX = c.x - minX;
+                const relY = c.y - minY;
                 return {
                     app: c,
                     nx: sourceApp.x + relX,
@@ -119,10 +117,10 @@ export class VirtualGrid {
             const ignoreIds = [sourceApp.id, ...collisions.map(c => c.id)];
             let valid = this.canFitAt(proposedMoves, ignoreIds);
 
-            // Stacking Protection
+            // Stacking Protection: Do displaced apps overlap the NEW Source position?
             if (valid) {
                 for (const m of proposedMoves) {
-                    if (intersectsSourceNew(m.nx, m.ny, m.app.cols, m.app.rows)) {
+                    if (this.rectsIntersect(m.nx, m.ny, m.app.cols, m.app.rows, targetX, targetY, sourceApp.cols, sourceApp.rows)) {
                         valid = false; break;
                     }
                 }
@@ -145,37 +143,57 @@ export class VirtualGrid {
             const moveProposal = [{ app: bigApp, nx: shadowX, ny: shadowY }];
             const ignoreIds = [sourceApp.id, bigApp.id];
 
-            // 1. Try Snapping Big App to Shadow Position
+            // 1. Determine Big App New Position
             let valid = this.canFitAt(moveProposal, ignoreIds);
-
-            // Stacking Protection
-            if (valid && intersectsSourceNew(shadowX, shadowY, bigApp.cols, bigApp.rows)) {
-                valid = false;
-            }
-
-            if (valid) {
-                return {
-                    possible: true, type: 'swap',
-                    targetX: bigApp.x, targetY: bigApp.y, // Snap Source to Big App Origin
-                    displaced: moveProposal
-                };
-            }
+            let bigAppNewPos = valid ? moveProposal[0] : null;
 
             // 2. Fallback: Try Snapping Big App to Source Origin (Strict Swap)
-            const strictProposal = [{ app: bigApp, nx: sourceApp.x, ny: sourceApp.y }];
-            valid = this.canFitAt(strictProposal, ignoreIds);
-
-            // Stacking Protection
-            if (valid && intersectsSourceNew(sourceApp.x, sourceApp.y, bigApp.cols, bigApp.rows)) {
-                valid = false;
+            if (!valid) {
+                const strictProposal = [{ app: bigApp, nx: sourceApp.x, ny: sourceApp.y }];
+                if (this.canFitAt(strictProposal, ignoreIds)) {
+                    valid = true;
+                    bigAppNewPos = strictProposal[0];
+                }
             }
 
-            if (valid) {
-                 return {
-                    possible: true, type: 'swap',
-                    targetX: bigApp.x, targetY: bigApp.y,
-                    displaced: strictProposal
-                };
+            // 3. Find Best Spot for Source App (A)
+            // It must fit in the grid (ignoring A & B) AND not overlap New Big App
+            if (valid && bigAppNewPos) {
+                const candidates = [
+                    // A. Top-Left of Big App Old Pos (Standard)
+                    { x: bigApp.x, y: bigApp.y },
+                    // B. Bottom-Left (Good for Vertical Swaps)
+                    { x: bigApp.x, y: bigApp.y + bigApp.rows - sourceApp.rows },
+                    // C. Top-Right (Good for Horizontal Swaps)
+                    { x: bigApp.x + bigApp.cols - sourceApp.cols, y: bigApp.y },
+                    // D. Bottom-Right
+                    { x: bigApp.x + bigApp.cols - sourceApp.cols, y: bigApp.y + bigApp.rows - sourceApp.rows }
+                ];
+
+                // Remove duplicates to be clean
+                const uniqueCandidates = [];
+                const seen = new Set();
+                candidates.forEach(c => {
+                    const k = `${c.x},${c.y}`;
+                    if(!seen.has(k)) { seen.add(k); uniqueCandidates.push(c); }
+                });
+
+                for (const cand of uniqueCandidates) {
+                    // Check Intersection with New Big App
+                    if (this.rectsIntersect(cand.x, cand.y, sourceApp.cols, sourceApp.rows,
+                                            bigAppNewPos.nx, bigAppNewPos.ny, bigApp.cols, bigApp.rows)) {
+                        continue;
+                    }
+
+                    // Check Grid Fit
+                    if (this.canFitAt([{ app: sourceApp, nx: cand.x, ny: cand.y }], ignoreIds)) {
+                        return {
+                            possible: true, type: 'swap',
+                            targetX: cand.x, targetY: cand.y,
+                            displaced: [{ app: bigApp, nx: bigAppNewPos.nx, ny: bigAppNewPos.ny }]
+                        };
+                    }
+                }
             }
         }
 
