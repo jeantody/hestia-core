@@ -28,8 +28,15 @@ registry.register('link', LinkApp, {
     ],
     css: `
         .app-type-link {
-            align-items: center; justify-content: center; text-decoration: none;
-            color: inherit; height: 100%; width: 100%; transition: color 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: inherit;
+            height: 100%;
+            width: 100%;
+            transition: color 0.2s;
         }
         .app-card .app-type-link:hover { transform: scale(1.05); }
         .app-type-link i { font-size: 2.5rem; margin-bottom: 10px; }
@@ -38,6 +45,10 @@ registry.register('link', LinkApp, {
         .app-card .app-type-link i:only-child {
             font-size: 5rem;
             margin-bottom: 0;
+        }
+
+        .edit-mode .app-type-link {
+            pointer-events: none;
         }
     `
 });

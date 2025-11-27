@@ -9,7 +9,7 @@
     display: flex; flex-direction: column; justify-content: center; align-items: center;
     position: relative; z-index: 10;
 
-    /* ADDED: Smooth transitions for Grid Swapping */
+    /* Smooth transitions for Grid Swapping */
     transition: box-shadow 0.2s, background-color 0.2s, border-color 0.2s,
                 grid-column 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
                 grid-row 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -17,18 +17,6 @@
     color: var(--text-main);
     overflow: hidden; min-height: 0; min-width: 0;
 }
-
-/* --- INNER CONTENT --- */
-.app-content {
-    flex: 1; display: flex; flex-direction: column;
-    overflow: hidden; width: 100%; height: 100%;
-}
-/* Prevent clicking links while dragging */
-.edit-mode .app-content { pointer-events: none; }
-
-/* --- STATES --- */
-.dashboard-container.show-outlines .app-card { border-color: var(--border-dim); }
-.shadow-on .app-card { box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
 
 /* --- EDIT MODE --- */
 .dashboard-container.edit-mode .app-card {
@@ -39,13 +27,31 @@
 }
 .dashboard-container.edit-mode .app-card:hover { border-color: var(--brand-primary); }
 
+/* MOVING STATE (Floating under mouse) */
 .dashboard-container.edit-mode .app-card.moving {
-    cursor: grabbing; opacity: 0.8; z-index: 100;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.1);
-    animation: none; transform: scale(1.005);
+    cursor: grabbing;
+    opacity: 0.9;
+    z-index: 1000; /* Top of everything */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    animation: none;
+    transform: scale(1.02);
 
-    /* DISABLE TRANSITION while dragging so it follows mouse instantly */
+    /* Disable layout transitions so it follows mouse instantly */
     transition: none;
+}
+
+/* GHOST PLACEHOLDER */
+.grid-ghost {
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px dashed var(--text-muted);
+    border-radius: var(--radius);
+    z-index: 1;
+    opacity: 0.5;
+    pointer-events: none;
+
+    /* The ghost should animate smoothly into new spots */
+    transition: grid-column 0.3s cubic-bezier(0.25, 0.8, 0.25, 1),
+                grid-row 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .app-card.collision {
@@ -53,7 +59,7 @@
     background-color: rgb(from var(--status-error) r g b / 20%) !important;
 }
 
-/* --- CARD CONTROLS (Hover Buttons) --- */
+/* ... Rest of file (Controls, Meta, Animations) ... */
 .edit-btn, .delete-btn {
     position: absolute; width: 30px; height: 30px;
     border-radius: 4px; color: white;
@@ -80,7 +86,6 @@
 .dashboard-container.edit-mode .app-card:hover .resize-handle { opacity: 1; }
 .dashboard-container.edit-mode .resize-handle { pointer-events: auto; }
 
-/* --- METADATA --- */
 .card-meta {
     position: absolute; bottom: 8px; left: 8px;
     font-size: 0.7rem; color: var(--text-muted);
@@ -88,7 +93,6 @@
 }
 .dashboard-container.edit-mode .card-meta { opacity: 1; }
 
-/* --- ANIMATIONS --- */
 @keyframes shake-gentle {
     0%, 50%, 100% { transform: rotate(0deg); }
     25% { transform: rotate(0.3deg); }

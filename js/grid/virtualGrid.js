@@ -27,7 +27,6 @@ export class VirtualGrid {
 
     // Check if a specific area is empty (optionally ignoring specific app IDs)
     isAreaFree(x, y, w, h, excludeIds = []) {
-        // Ensure excludeIds is always an array
         const excludes = Array.isArray(excludeIds) ? excludeIds : [excludeIds];
 
         for (let r = 0; r < h; r++) {
@@ -35,14 +34,13 @@ export class VirtualGrid {
                 const targetY = y + r - 1;
                 const targetX = x + c - 1;
 
-                // 1. Bounds check (Must be inside grid)
+                // 1. Bounds check
                 if (targetY < 0 || targetY >= this.rows || targetX < 0 || targetX >= this.cols) {
                     return false;
                 }
 
                 // 2. Occupancy check
                 const cell = this.matrix[targetY][targetX];
-                // If cell is occupied AND the occupant is NOT in our exclude list -> Collision
                 if (cell !== null && !excludes.includes(cell)) {
                     return false;
                 }
@@ -51,8 +49,7 @@ export class VirtualGrid {
         return true;
     }
 
-    // NEW: Scan a rectangular area for ANY app ID
-    // Returns the first ID found that isn't the current app
+    // Scan a rectangular area for ANY app ID (returns the first collision)
     scanForCollision(x, y, w, h, ignoreId) {
         for (let r = 0; r < h; r++) {
             for (let c = 0; c < w; c++) {
@@ -62,11 +59,17 @@ export class VirtualGrid {
                 if (targetY >= 0 && targetY < this.rows && targetX >= 0 && targetX < this.cols) {
                     const cell = this.matrix[targetY][targetX];
                     if (cell !== null && cell !== ignoreId) {
-                        return cell; // Found a collision!
+                        return cell;
                     }
                 }
             }
         }
         return null;
+    }
+
+    // Helper: Check if two rectangles intersect
+    rectsIntersect(a, b) {
+        return (a.x < b.x + b.w && a.x + a.w > b.x &&
+                a.y < b.y + b.h && a.y + a.h > b.y);
     }
 }
