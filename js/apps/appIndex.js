@@ -8,3 +8,4 @@ import './helloWorld.js';
 import './glancesApp.js';
 import './piholeApp.js';
 import './delugeApp.js';
+import './jellyfinApp.js';
