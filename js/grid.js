@@ -192,7 +192,7 @@ export function findEmptySlot(w, h) {
             if (vGrid.isAreaFree(x, y, w, h)) return { x, y };
         }
     }
-    return { x: 1, y: 1 };
+    return null;
 }
 
 export function saveGridState() { saveState(); }

@@ -331,7 +331,14 @@ async function saveApp(existingId, type) {
 
         // --- SEARCH FOR FREE SPOT ---
         let pos = findEmptySlot(w, h);
+
+        if (!pos) {
+            showToast("Dashboard is full! Cannot place app.", "error");
+            return;
+        }
         // ----------------------------
+
+
 
         newApps.push({
             id: Date.now(),
