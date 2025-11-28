@@ -1,216 +1,151 @@
-# 🔥 Project Hestia
+# 🔥 Project Hestia v0.1.0
 
-![Preview](preview.png)
+![Preview](assets/preview.gif)
 
-**A highly customizable, browser-based dashboard that puts you in control.**
-
-**Project Hestia** is a client-side dashboard designed to be your browser's start page. It features a responsive grid layout, a powerful theming engine, and a modular app architecture that allows developers to easily create custom widgets.
+Welcome to **Project Hestia**\! This is a modular start page designed to give you full control over your browser's new tab experience. It runs entirely in the browser (no complex backend required) but includes powerful integrations for your homelab services.
 
 ## ✨ Features
 
-  * **Responsive Grid System:** Drag-and-drop your apps. Resize them to any dimension. The apps will automatically adjust to your prefered grid size.
-  * **Deep Customization:**
-      * **Base16 Support:** Includes predefined palettes that follow the [Base16](https://github.com/chriskempson/base16) framework. You can add your own palettes by adding entries to the `js/palettes.js` file.
-      * **Fine-Grained Control:** Tweak every color, gap size, corner radius, and font.
-      * **Live Previews:** See changes instantly as you edit settings.
-  * **Modular App System:** Apps are isolated modules. Creating a new widget (Weather, Clock, Notes) is as simple as writing a single JavaScript class.
-  * **Client-Side Persistence:**
-      * **No Backend Required:** Runs entirely in the browser.
-      * **LocalStorage:** Saves your layout and settings automatically.
-      * **IndexedDB:** Efficiently stores large assets like uploaded images locally.
-  * **Developer Friendly:** Built with vanilla ES6+ JavaScript. No build steps, bundlers, or frameworks required.
+  * **🎨 Deep Theming:**
+      * Full **Base16** palette support (Dracula, Nord, Monokai, etc.).
+      * Customize every pixel: gap sizes, corner radii, fonts, and shadows.
+      * Create and save your own custom presets directly in the UI.
+  * **⚡ Snappy Grid System:**
+      * Powered by the **View Transitions API** for butter-smooth animations when moving or resizing widgets.
+      * Drag-and-drop layout with auto-saving.
+  * **💾 Smart Persistence:**
+      * **No Database Required:** Configuration saves to `localStorage`.
+      * **IndexedDB Support:** Upload high-res images directly to the dashboard without hitting storage quotas.
+  * **🐳 Homelab Integrations:**
+      * Connects to **Glances**, **Pi-hole**, **Deluge**, and **Jellyfin**.
+      * Includes a pre-configured Nginx proxy to handle CORS issues automatically.
+
+## 📦 Included Apps
+
+Hestia comes with a suite of built-in apps. You can add as many as you like\!
+
+### 🏠 Essentials
+
+  * **Clock:** Digital clock with 12h/24h formats.
+  * **Weather:** Live local weather powered by [Open-Meteo](https://open-meteo.com/).
+  * **Calendar:** A simple monthly view.
+  * **Notes:** Sticky notes with full **Markdown** support (Lists, Checkboxes, Headers).
+  * **Links:** Bookmarks with "Cover" mode and "Colorize" options to match your theme.
+
+### 📊 Data & Homelab
+
+  * **Glances:** Detailed server monitoring (CPU, Mem, Disk I/O, Network, Sensors). Supports Docker container lists\!
+  * **Pi-hole:** View total queries, blocked count, and ratio.
+  * **Deluge:** Monitor download/upload speeds and active torrent queues.
+  * **Jellyfin:** Shows "Now Playing" backdrop or a shelf of "Latest Added" media.
+  * **System Fetch:** A "Neofetch-style" info card for your browser or server.
+
+### 🎨 Visuals
+
+  * **Image Frame:** Display photos or logos (upload or URL).
+  * **Matrix Rain:** The classic falling code effect.
+  * **Pipes:** A retro 3D pipes screensaver widget.
+
+-----
 
 ## 🚀 Getting Started
 
-Visit the [live demo page](https://mult1v4c.github.io/hestia-core/) or select one of the steps below.
+### Option 1: Docker (Recommended)
 
-The easiest way to run Hestia is to clone this repository and open `index.html` in your browser.
+This is the best way to run Hestia if you plan to use the **API integrations** (Glances, Pi-hole, etc.), as the included Nginx config handles CORS permissions for you.
 
-```bash
-git clone https://github.com/mult1v4c/hestia-core
-```
+1.  Clone the repository:
 
-### Running Locally (Docker)
+    ```bash
+    git clone https://github.com/mult1v4c/hestia-core
+    cd hestia-core
+    ```
 
-You can run Hestia in a Docker container by using the included `Dockerfile`.
+2.  Build and Run:
 
-```bash
-docker build -t hestia-core .
-docker run -d -p 8080:80 hestia-core
-```
+    ```bash
+    docker build -t hestia-core .
+    docker run -d -p 8080:80 --name hestia hestia-core
+    ```
 
-Visit `http://localhost:8080` in your browser.
+3.  Visit `http://localhost:8080`\!
 
-### Manual Installation
+### Option 2: Static / Manual
 
-Since Hestia is a static web application, you can serve it with any web server (Python, Nginx, Apache, or VS Code Live Server).
+Since Hestia is vanilla JavaScript, you can run it on any web server.
 
 ```bash
 # Example using Python
 python3 -m http.server 8000
 ```
 
-## 📖 User Guide
+*Note: Without the Nginx proxy included in the Dockerfile, some external APIs (like Deluge or Pi-hole) might block connections due to CORS policies.*
 
-### Edit Mode
+-----
 
-Click the **Edit** button (Pen Icon) in the top-right toolbar.
+## ⚙️ Configuration Guide
 
-  * **Move:** Drag cards to rearrange them.
-  * **Resize:** Grab the bottom-right corner of any card to resize it.
-  * **Edit App:** Click the Pencil icon on a card to change its settings (URL, Title, Colors).
-  * **Delete:** Click the Trash icon to remove an app.
+### Using the Proxy (Docker Only)
 
-### Settings
+To make the integrations work smoothly, Hestia's `default.conf` sets up internal proxies. When configuring apps in the dashboard, use these relative paths:
 
-Click the **Gear** icon to open the customization panel.
+  * **Pi-hole URL:** `/pi-api/admin/api.php` (instead of `http://192.168.x.x/...`)
+  * **Deluge URL:** `/deluge-api/json`
+  * **Jellyfin URL:** `/jellyfin-api/`
 
-  * **Themes:** Select a preset or pick custom colors.
-  * **Geometry:** Adjust the grid gap, padding, and border radius.
-  * **Export/Import:** Backup your entire dashboard configuration to a JSON file.
+*Note: You will need to update `default.conf` to point to your actual server IPs before building the Docker image\!*
+
+### Data Backup
+
+You can export your entire theme and grid layout to a JSON file via the **Settings Panel** (Gear Icon). This is great for backing up your setup or sharing themes with friends\!
+
+-----
 
 ## 🛠️ Developer Guide
 
-Hestia-Core operates on a bespoke, vanilla JS framework designed for zero-dependency modularity.
+Want to build your own widget? Hestia uses a simple class-based system.
 
-### 1\. Core Architecture
+1.  **Create a file:** `js/apps/myApp.js`
+2.  **Extend BaseApp:**
 
-The application state is centralized in `js/state.js`. It utilizes a lightweight **Pub/Sub** pattern.
-
-  * **State Tree:** The entire app config (apps, theme, settings) lives in a single `state` object.
-  * **Reactivity:** Components do not poll for changes. Instead, they subscribe to state updates.
-    ```javascript
-    import { setState, subscribe } from "./state.js";
-
-    // Update state (notifies listeners)
-    setState('settings.theme.gapSize', '20px');
-
-    // React to changes
-    subscribe((state, path, value) => {
-        if (path.startsWith('settings.theme')) renderGrid();
-    });
-    ```
-
-### 2\. The App Lifecycle
-
-Apps in Hestia extend the `BaseApp` class. They have two critical lifecycle phases:
-
-#### Phase A: `render(app)`
-
-  * **Role:** HTML Generation.
-  * **Behavior:** Must return a `Promise<string>`. This method is `async`, allowing you to fetch data (APIs, RSS) *before* the card renders.
-  * **Context:** No DOM access yet.
-
-#### Phase B: `onMount(el, app)`
-
-  * **Role:** Hydration & Events.
-  * **Behavior:** Called immediately after the HTML is injected into the DOM.
-  * **Context:** `el` is the `HTMLElement` of the card wrapper. Use this to attach event listeners, start timers (`setInterval`), or manipulate canvas elements.
-
-**Example: A Digital Clock**
-
-```javascript
-export class ClockApp extends BaseApp {
-    async render(app) {
-        return `<div class="clock-face">Loading...</div>`;
-    }
-
-    onMount(el, app) {
-        const face = el.querySelector('.clock-face');
-        this.timer = setInterval(() => {
-            face.innerText = new Date().toLocaleTimeString();
-        }, 1000);
-    }
-}
-```
-
-### 3\. Registry & CSS Injection
-
-Hestia uses a **Registry Singleton** (`js/registry.js`) to manage app definitions.
-
-```javascript
-registry.register('my-app', MyAppClass, { metadata });
-```
-
-  * **Metadata:** Defines the default grid size, display name, and configuration fields.
-  * **Style Injection:** The `css` property in metadata is **scoped** and injected into the `<head>` dynamically.
-      * The registry creates a `<style id="style-app-{type}">` tag.
-      * This ensures CSS is loaded *once* per app type, preventing duplication even if you have 10 instances of the same app.
-
-### 4\. Storage Engine
-
-Hestia uses a hybrid storage strategy to bypass `localStorage` quota limits:
-
-  * **Configuration (`localStorage`):**
-      * Key: `HESTIA_DASHBOARD_STATE`
-      * Stores: JSON structure of layout positions, settings, and text data.
-  * **Binary Assets (`IndexedDB`):**
-      * Database: `hestia-db` / Store: `images`
-      * Role: Stores user-uploaded images as `Blob` objects.
-      * Reference: The `localStorage` configuration only stores the image ID (e.g., `img_171923...`), which the `ImageApp` resolves asynchronously at runtime.
-
-### 5\. Creating a Custom App
-
-#### Step 1: Define the Class
-
-Create `js/apps/helloWorldApp.js`.
+<!-- end list -->
 
 ```javascript
 import { BaseApp } from "./baseApp.js";
 import { registry } from "../registry.js";
 
-export class HelloWorldApp extends BaseApp {
+class MyApp extends BaseApp {
+    // 1. Render HTML
     async render(app) {
-        const msg = app.data.message || "Hello World";
-        const align = app.data.align || "center";
-
         return `
-            <div class="app-hello" style="text-align: ${align}">
-                <h2>${msg}</h2>
-            </div>`;
+            <div class="my-app">
+                Hello ${app.data.name || 'World'}!
+            </div>
+        `;
+    }
+
+    // 2. Logic after DOM insertion
+    onMount(el, app) {
+        console.log("I am alive!");
     }
 }
 
-registry.register('hello-world', HelloWorldApp, {
-    label: 'Hello World',
+// 3. Register
+registry.register('my-app', MyApp, {
+    label: 'My Cool App',
     category: 'static',
     defaultSize: { cols: 2, rows: 1 },
-
-    // Auto-generates the Edit Modal form
     settings: [
-        { name: 'message', label: 'Message', type: 'text' },
-        {
-            name: 'align',
-            label: 'Alignment',
-            type: 'select',
-            options: [
-                { label: 'Left', value: 'left' },
-                { label: 'Center', value: 'center' }
-            ]
-        }
+        { name: 'name', label: 'Who to greet?', type: 'text' }
     ],
-
-    // Scoped CSS injected automatically
-    css: `
-        .app-hello {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: var(--brand-primary);
-        }
-    `
+    css: `.my-app { color: var(--brand-primary); font-weight: bold; }`
 });
 ```
 
-#### Step 2: Register the Module
+3.  **Import it:** Add `import './myApp.js';` to `js/apps/appIndex.js`.
 
-Import the file in `js/apps/appIndex.js` to execute the registration.
-
-```javascript
-import './helloWorldApp.js';
-```
+-----
 
 ## 📄 License
 
-This project is licensed under the **MIT License**.
+Project Hestia is open-source and licensed under the **MIT License**.
