@@ -99,7 +99,9 @@ To make the integrations work smoothly, Hestia's `default.conf` sets up internal
 
 *Note: You will need to update `default.conf` to point to your actual server IPs before building the Docker image\!*
 
-### Data Backup
+---
+
+## Data Backup
 
 You can export your entire theme and grid layout to a JSON file via the **Settings Panel** (Gear Icon). This is great for backing up your setup or sharing themes with friends\!
 
