@@ -2,7 +2,11 @@
 
 ![Preview](assets/preview.gif)
 
-Welcome to **Project Hestia**\! This is a modular start page designed to give you full control over your browser's new tab experience. It runs entirely in the browser (no complex backend required) but includes powerful integrations for your homelab services.
+Welcome to **Project Hestia**\! This is a modular, grid-based dashboard that runs entirely in the browser (no complex backend required) but includes powerful integrations for your homelab services.
+
+This was made for personal use but as I made more features available, I thought this could be shared with anyone willing to learn how the framework operates.
+
+Inspired by the likes of Homarr, Dash., and Homepage.
 
 ## ✨ Features
 
