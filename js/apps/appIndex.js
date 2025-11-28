@@ -12,3 +12,4 @@ import './jellyfinApp.js';
 import './rssApp.js';
 import './matrixApp.js';
 import './pipesApp.js';
+import './fetchApp.js';
