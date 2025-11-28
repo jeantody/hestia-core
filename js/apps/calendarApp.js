@@ -42,17 +42,20 @@ export class CalendarApp extends BaseApp {
 registry.register('calendar', CalendarApp, {
     label: 'Calendar',
     category: 'static',
-    defaultSize: { cols: 1, rows: 1 },
+    defaultSize: { cols: 2, rows: 2 },
     settings: [],
     css: `
         .app-type-calendar {
-            width: 100%; height: 100%;
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
             padding: 0; overflow: hidden;
             display: flex; flex-direction: column;
+            width: 100%; height: 100%;
         }
         .calendar-paper {
             flex: 1; box-sizing: border-box; padding: 10px;
             display: flex; flex-direction: column;
+            height: 100%;
         }
         .cal-header {
             font-weight: bold; text-align: center; margin-bottom: 5px;
