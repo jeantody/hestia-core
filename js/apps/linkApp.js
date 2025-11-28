@@ -9,6 +9,7 @@ export class LinkApp extends BaseApp {
         const url = data.url || '#';
         const hideLabel = data.hideLabel === true || data.hideLabel === 'true';
         const displayMode = data.display || 'standard'; // 'standard' | 'cover'
+        const colorize = data.colorize === true || data.colorize === 'true'; // NEW
 
         // Custom Styles (Only applied in Standard mode)
         let customStyle = '';
@@ -21,7 +22,7 @@ export class LinkApp extends BaseApp {
         let isImage = false;
         let imgSrc = '';
 
-        // 1. Check if it's a Saved Image (IndexedDB)
+        // 1. Resolve Image Source
         if (iconInput.startsWith('img_')) {
             try {
                 const dbUrl = await getImageUrl(iconInput);
@@ -32,23 +33,37 @@ export class LinkApp extends BaseApp {
             } catch (e) {
                 console.warn("[LinkApp] Failed to load image", e);
             }
-        }
-        // 2. Check if it's a URL
-        else if (iconInput.includes('/') || iconInput.includes('.')) {
+        } else if (iconInput.includes('/') || iconInput.includes('.')) {
             imgSrc = iconInput;
             isImage = true;
         }
 
-        // 3. Render HTML
+        // 2. Render Icon HTML
         let iconHtml;
         if (isImage) {
-            iconHtml = `<img src="${imgSrc}" class="link-app-icon" alt="icon" ${customStyle}>`;
+            if (colorize) {
+                // COLORIZED MODE: Render as a masked DIV
+                // We inject the mask URL inline.
+                // Note: We need to handle merging custom styles if they exist.
+                let styleAttr = `style="-webkit-mask-image: url('${imgSrc}'); mask-image: url('${imgSrc}');"`;
+
+                if (customStyle) {
+                    // Extract inner style string from customStyle="style='...'"
+                    const inner = customStyle.replace(/^style=["']|["']$/g, '');
+                    styleAttr = `style="${inner} -webkit-mask-image: url('${imgSrc}'); mask-image: url('${imgSrc}');"`;
+                }
+
+                iconHtml = `<div class="link-app-icon colorized" ${styleAttr}></div>`;
+            } else {
+                // NORMAL MODE: Render as IMG
+                iconHtml = `<img src="${imgSrc}" class="link-app-icon" alt="icon" ${customStyle}>`;
+            }
         } else {
+            // Font Awesome (Always takes text color)
             const iconClass = resolveIconClass(iconInput);
             iconHtml = `<i class="${iconClass}" ${customStyle}></i>`;
         }
 
-        // Add specific class for cover mode
         const modeClass = displayMode === 'cover' ? 'mode-cover' : '';
 
         return `
@@ -66,7 +81,18 @@ registry.register('link', LinkApp, {
         { name: 'url', label: 'URL', type: 'text', placeholder: 'https://...' },
         { name: 'icon', label: 'Icon', type: 'image-source', placeholder: 'fa-fire OR https://...' },
 
-        // New: Display Mode Selection
+        // NEW: Colorize Toggle
+        {
+            name: 'colorize',
+            label: 'Colorize Icon (Match Text)',
+            type: 'select',
+            defaultValue: 'false',
+            options: [
+                { label: 'No (Original Colors)', value: 'false' },
+                { label: 'Yes (Monochrome)', value: 'true' }
+            ]
+        },
+
         {
             name: 'display',
             label: 'Display Mode',
@@ -78,7 +104,7 @@ registry.register('link', LinkApp, {
             ]
         },
 
-        { name: 'iconSize', label: 'Icon Size (Standard Mode)', type: 'text', placeholder: 'e.g. 50px (ignored in Cover mode)' },
+        { name: 'iconSize', label: 'Icon Size (Standard Mode)', type: 'text', placeholder: 'e.g. 50px' },
         { name: 'hideLabel', label: 'Hide Text Label', type: 'select', options: [{label:'No', value:'false'}, {label:'Yes', value:'true'}], defaultValue: 'false'}
     ],
     css: `
@@ -92,12 +118,13 @@ registry.register('link', LinkApp, {
             height: 100%;
             width: 100%;
             transition: color 0.2s;
-            position: relative; /* For absolute children */
+            position: relative;
         }
         .app-card .app-type-link:hover { transform: scale(1.05); }
 
-        /* --- STANDARD MODE --- */
+        /* --- STANDARD ICONS --- */
         .app-type-link i { font-size: 2.5rem; margin-bottom: 10px; transition: all 0.2s; }
+
         .link-app-icon {
             height: 2.5rem;
             width: auto;
@@ -106,17 +133,37 @@ registry.register('link', LinkApp, {
             pointer-events: none;
             transition: all 0.2s;
         }
+
+        /* --- COLORIZED VARIANT (DIV Mask) --- */
+        .link-app-icon.colorized {
+            background-color: currentColor; /* The Magic: Takes text color */
+
+            /* Default Aspect Ratio 1:1 if not set */
+            width: 2.5rem;
+
+            /* Mask Properties */
+            -webkit-mask-size: contain;
+            mask-size: contain;
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            mask-position: center;
+        }
+
         .app-type-link span { font-size: 1rem; text-align: center; z-index: 1; }
 
         /* Large Icon Mode (No Text) */
-        .app-card .app-type-link:not(.mode-cover) i:only-child {
-            font-size: 5rem;
-            margin-bottom: 0;
-        }
+        .app-card .app-type-link:not(.mode-cover) i:only-child { font-size: 5rem; margin: 0; }
+
         .app-card .app-type-link:not(.mode-cover) .link-app-icon:only-child {
             height: 5rem;
-            width: 80%;
-            margin-bottom: 0;
+            width: 80%; /* For IMG */
+            margin: 0;
+        }
+
+        /* Fix for Colorized DIV in Large Mode */
+        .app-card .app-type-link:not(.mode-cover) .link-app-icon.colorized:only-child {
+            width: 5rem; /* Force width to match height for square icons */
         }
 
         /* --- COVER MODE --- */
@@ -132,16 +179,21 @@ registry.register('link', LinkApp, {
             top: 0; left: 0;
             width: 100%; height: 100%;
             margin: 0;
-            object-fit: cover; /* This makes it fill the card */
+            object-fit: cover;
             z-index: 0;
         }
 
-        /* Icon Cover (Big Centered) */
+        /* Colorized Cover */
+        .app-type-link.mode-cover .link-app-icon.colorized {
+            -webkit-mask-size: cover;
+            mask-size: cover;
+            /* Optional: Lower opacity for backgrounds so text pops */
+            opacity: 0.3;
+        }
+
+        /* Icon Cover */
         .app-type-link.mode-cover i {
-            font-size: 6rem; /* Huge size */
-            margin: 0;
-            opacity: 0.8;
-            z-index: 0;
+            font-size: 6rem; margin: 0; opacity: 0.8; z-index: 0;
         }
 
         /* Text Overlay */
@@ -156,8 +208,6 @@ registry.register('link', LinkApp, {
             text-shadow: 0 1px 2px black;
         }
 
-        .edit-mode .app-type-link {
-            pointer-events: none;
-        }
+        .edit-mode .app-type-link { pointer-events: none; }
     `
 });
