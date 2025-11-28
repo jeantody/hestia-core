@@ -43,6 +43,11 @@ textarea,
     font-size: 0.85rem;
 }
 
+input:disabled {
+    background-color: var(--bg-canvas);
+    outline: none;
+}
+
 input:focus, select:focus, textarea:focus, .modal-input:focus {
     outline: none;
     border-color: var(--brand-primary);
