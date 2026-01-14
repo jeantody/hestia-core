@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hestia</title>
+    <title>Palantir Dash</title>
     <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel= "stylesheet" href= "https://maxst.icons8.com/vue-static/landings/line-awesome/line-awesome/1.3.0/css/line-awesome.min.css" >
@@ -21,7 +21,7 @@
 
     <!-- Header / Toolbar -->
     <header>
-        <h1 id="headerTitle"><i class="fa-solid fa-fire"></i> HESTIA</h1>
+        <h1 id="headerTitle"><i class="fa-solid fa-fire"></i> Palantir Dash</h1>
         <div class="toolbar">
             <button class="btn btn-icon btn-error" id="clearBtn" title="Clear Dashboard" disabled>
                 <i class="fa-solid fa-eraser"></i>
@@ -68,12 +68,12 @@
         <div class="settings-content">
             <!-- General Group -->
             <div class="settings-group">
-                <h4>General</h4>
+                <h4>Geral</h4>
                 <div class="general-grid-container">
                     <div>
                         <!-- Title -->
                         <div class="setting-row">
-                            <span class="setting-label">Title</span>
+                            <span class="setting-label">Titulo</span>
                             <div class="setting-controls">
                                 <input type="text" class="setting-val" id="input-titleBarText" data-default="HESTIA">
                                 <i class="fa-solid fa-rotate-left reset-icon" id="reset-titleBarText"></i>
@@ -81,7 +81,7 @@
                         </div>
                         <!-- Icon -->
                         <div class="setting-row">
-                            <span class="setting-label">Icon</span>
+                            <span class="setting-label">Icone</span>
                             <div class="setting-controls">
                                 <input type="text" class="setting-val" id="input-titleBarIcon" data-default="fa-fire" title="FontAwesome class">
                                 <i class="fa-solid fa-rotate-left reset-icon" id="reset-titleBarIcon"></i>
@@ -143,7 +143,7 @@
                             </div>
                         </div>
                         <div class="setting-row">
-                            <span class="setting-label">Columns</span>
+                            <span class="setting-label">Colunas</span>
                             <div class="setting-controls">
                                 <input type="text" class="setting-val" style="width:150px; text-align:right;" id="input-gridColumns" data-default="10" disabled>
                                 <i class="fa-solid fa-rotate-left reset-icon" id="reset-gridColumns"></i>
@@ -162,7 +162,7 @@
 
             <!-- Themes Group -->
             <div class="settings-group">
-                <h4>Themes & Colors</h4>
+                <h4>Tema & Cor</h4>
                 <div class="setting-row" style="margin-bottom: 20px;">
                     <div class="setting-controls" style="width:100%; display:flex; gap:10px; align-items: center;">
                         <select class="setting-select" id="presetSelect" style="flex:1;"></select>
@@ -210,16 +210,16 @@
                         </div>
                         <div class="color-group-wrapper">
                             <h5>Status</h5>
-                            <div class="setting-row"><span class="setting-label">Error</span><div class="setting-controls"><div class="color-preview" id="preview-statusError"></div><i class="fa-solid fa-rotate-left reset-icon" id="reset-statusError"></i></div></div>
-                            <div class="setting-row"><span class="setting-label">Warning</span><div class="setting-controls"><div class="color-preview" id="preview-statusWarning"></div><i class="fa-solid fa-rotate-left reset-icon" id="reset-statusWarning"></i></div></div>
-                            <div class="setting-row"><span class="setting-label">Success</span><div class="setting-controls"><div class="color-preview" id="preview-statusSuccess"></div><i class="fa-solid fa-rotate-left reset-icon" id="reset-statusSuccess"></i></div></div>
+                            <div class="setting-row"><span class="setting-label">Erro</span><div class="setting-controls"><div class="color-preview" id="preview-statusError"></div><i class="fa-solid fa-rotate-left reset-icon" id="reset-statusError"></i></div></div>
+                            <div class="setting-row"><span class="setting-label">Aviso</span><div class="setting-controls"><div class="color-preview" id="preview-statusWarning"></div><i class="fa-solid fa-rotate-left reset-icon" id="reset-statusWarning"></i></div></div>
+                            <div class="setting-row"><span class="setting-label">Sucesso</span><div class="setting-controls"><div class="color-preview" id="preview-statusSuccess"></div><i class="fa-solid fa-rotate-left reset-icon" id="reset-statusSuccess"></i></div></div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="settings-footer">
-            Hestia-core v0.1.0 &nbsp; <i class="fa-solid fa-heart" style="color:var(--status-error);"></i> &nbsp; <a href="https://github.com/mult1v4c/hestia-core" target="_blank"><i class="fa-brands fa-github"></i></a>
+            Palantir Dash &nbsp; <i class="fa-solid fa-heart" style="color:var(--status-error);"></i> &nbsp; <a href="https://github.com/mult1v4c/hestia-core" target="_blank"><i class="fa-brands fa-github"></i></a>
         </div>
 
         <!-- Hidden Native Inputs for Color Pickers -->
@@ -249,8 +249,8 @@
     <!-- Generic Modal Template -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal-box">
-            <div class="modal-header" id="modalTitle">Title</div>
-            <div class="modal-body" id="modalContent">Content</div>
+            <div class="modal-header" id="modalTitle">Titulo</div>
+            <div class="modal-body" id="modalContent">Conteudo</div>
             <div class="modal-footer">
                 <button class="btn" id="modalCancel"><i class="fa-solid fa-xmark"></i></button>
                 <button class="btn btn-icon btn-primary" id="modalConfirm"><i class="fa-solid fa-checkmark"></i></button>
